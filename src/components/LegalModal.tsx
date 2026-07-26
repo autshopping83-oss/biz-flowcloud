@@ -54,42 +54,42 @@ export const LegalModal: React.FC<Props> = ({ initialTab = 'PRIVACY', onClose })
             {activeTab === 'PRIVACY' && (
               <div className="space-y-6 animate-fadeIn">
                 <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-4">1. Política de Privacidade – Biz-Flow</h3>
-                <p>Biz-Flow (biz-flow.cloud) valoriza sua privacidade e protege seus dados pessoais. Esta política explica como coletamos, usamos e protegemos suas informações.</p>
-                
-                <h4 className="font-bold text-slate-900 dark:text-white mt-4">Informações que coletamos</h4>
+                <p>O Biz-flow, desenvolvido por <strong>Elias Chanisso</strong>, valoriza a sua privacidade e protege os seus dados pessoais. Esta política explica como recolhemos, utilizamos e protegemos as suas informações.</p>
+
+                <h4 className="font-bold text-slate-900 dark:text-white mt-4">Armazenamento de dados (Local vs. Nuvem)</h4>
                 <ul className="list-disc pl-5 space-y-1">
-                  <li>Nome, e-mail e telefone fornecidos ao criar conta.</li>
-                  <li>Informações financeiras (planos e pagamentos).</li>
-                  <li>Dados de uso do software (como número de documentos, relatórios e login).</li>
-                  <li>Cookies e dados de navegação para melhorar a experiência do usuário.</li>
+                  <li><strong>Uso Offline:</strong> Dados armazenados exclusivamente no seu dispositivo. O desenvolvedor não tem qualquer acesso.</li>
+                  <li><strong>Uso Web/Nuvem:</strong> Dados transmitidos e armazenados de forma segura nos nossos servidores para sincronização entre dispositivos. Requer e-mail para criação de conta.</li>
                 </ul>
 
-                <h4 className="font-bold text-slate-900 dark:text-white mt-4">Como usamos suas informações</h4>
+                <h4 className="font-bold text-slate-900 dark:text-white mt-4">Permissões do dispositivo</h4>
                 <ul className="list-disc pl-5 space-y-1">
-                  <li>Para fornecer os serviços do Biz-Flow.</li>
-                  <li>Para processar pagamentos e gerenciar assinaturas.</li>
-                  <li>Para enviar comunicações sobre atualizações e suporte.</li>
-                  <li>Para melhorar nossos produtos, funcionalidades e segurança.</li>
+                  <li><strong>Câmara:</strong> Exclusivamente para leitura de códigos (escanear).</li>
+                  <li><strong>GPS:</strong> Para funcionalidades de rastreamento e registo geográfico.</li>
+                  <li><strong>Notificações:</strong> Para alertas e atualizações importantes.</li>
                 </ul>
 
-                <h4 className="font-bold text-slate-900 dark:text-white mt-4">Compartilhamento de informações</h4>
+                <h4 className="font-bold text-slate-900 dark:text-white mt-4">Uso e partilha de informações</h4>
                 <ul className="list-disc pl-5 space-y-1">
-                  <li>Não vendemos seus dados a terceiros.</li>
-                  <li>Compartilhamos apenas quando necessário para operar a plataforma (por exemplo, provedores de pagamento, serviços de nuvem).</li>
+                  <li>Informações usadas apenas para prestação do serviço, autenticação e sincronização.</li>
+                  <li>Não vendemos, alugamos ou partilhamos dados com terceiros para marketing ou publicidade.</li>
                 </ul>
 
-                <h4 className="font-bold text-slate-900 dark:text-white mt-4">Segurança</h4>
+                <h4 className="font-bold text-slate-900 dark:text-white mt-4">Direito ao esquecimento</h4>
                 <ul className="list-disc pl-5 space-y-1">
-                  <li>Utilizamos criptografia SSL para proteger dados transmitidos.</li>
-                  <li>Armazenamento seguro com backups regulares.</li>
-                  <li>Acesso restrito aos dados apenas para pessoal autorizado.</li>
+                  <li>Pode solicitar a eliminação completa da sua conta e dados através da opção "Eliminar Conta" nas definições ou por e-mail.</li>
+                  <li>Após confirmação, todos os dados sincronizados são permanentemente apagados.</li>
                 </ul>
 
-                <h4 className="font-bold text-slate-900 dark:text-white mt-4">Direitos do usuário</h4>
+                <h4 className="font-bold text-slate-900 dark:text-white mt-4">Legislação aplicável</h4>
                 <ul className="list-disc pl-5 space-y-1">
-                  <li>Solicitar acesso aos dados que coletamos sobre você.</li>
-                  <li>Corrigir, atualizar ou excluir seus dados.</li>
-                  <li>Cancelar sua conta a qualquer momento.</li>
+                  <li>Regida pelas leis da República de Moçambique.</li>
+                </ul>
+
+                <h4 className="font-bold text-slate-900 dark:text-white mt-4">Contacto</h4>
+                <ul className="list-disc pl-5 space-y-1">
+                  <li>WhatsApp: +258 840 636 794</li>
+                  <li>Email: bizflow.cloud83@gmail.com</li>
                 </ul>
               </div>
             )}
@@ -124,39 +124,38 @@ export const LegalModal: React.FC<Props> = ({ initialTab = 'PRIVACY', onClose })
 
             {activeTab === 'TERMS' && (
               <div className="space-y-6 animate-fadeIn">
-                 <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-4">3. Termos de Uso / Condições Gerais – Biz-Flow</h3>
-                 <p>Ao utilizar o Biz-Flow (biz-flow.cloud), você concorda com os seguintes termos:</p>
+                 <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-4">3. Termos de Serviço – Biz-Flow</h3>
+                 <p>Ao utilizar o Biz-flow (biz-flow.cloud), desenvolvido por <strong>Elias Chanisso</strong>, o utilizador concorda com os seguintes termos:</p>
 
-                 <h4 className="font-bold text-slate-900 dark:text-white mt-4">Uso da plataforma</h4>
+                 <h4 className="font-bold text-slate-900 dark:text-white mt-4">Uso do serviço e responsabilidades</h4>
                  <ul className="list-disc pl-5 space-y-1">
-                   <li>O software é destinado a gerenciamento financeiro, emissão de faturas e recibos.</li>
-                   <li>Você concorda em fornecer informações verdadeiras e precisas ao criar sua conta.</li>
-                   <li>É proibido usar a plataforma para atividades ilegais ou fraudulentas.</li>
+                   <li>O Biz-flow é uma ferramenta de gestão e fluxo de trabalho.</li>
+                   <li>O utilizador é responsável pela exatidão e legalidade dos dados inseridos.</li>
+                   <li>É proibido usar a plataforma para fins ilegais ou fraudulentos.</li>
                  </ul>
 
-                 <h4 className="font-bold text-slate-900 dark:text-white mt-4">Planos e pagamentos</h4>
+                 <h4 className="font-bold text-slate-900 dark:text-white mt-4">Contas e segurança</h4>
                  <ul className="list-disc pl-5 space-y-1">
-                   <li>Planos pagos são cobrados conforme valores divulgados na landing page.</li>
-                   <li>Pagamentos não são reembolsáveis, exceto se houver falha técnica comprovada.</li>
-                   <li>Biz-Flow reserva-se o direito de alterar preços mediante aviso prévio.</li>
+                   <li>Necessário e-mail válido para funcionalidades de nuvem.</li>
+                   <li>Utilizador responsável pela confidencialidade das credenciais.</li>
                  </ul>
 
-                 <h4 className="font-bold text-slate-900 dark:text-white mt-4">Responsabilidades</h4>
+                 <h4 className="font-bold text-slate-900 dark:text-white mt-4">Propriedade intelectual</h4>
                  <ul className="list-disc pl-5 space-y-1">
-                   <li>Biz-Flow não se responsabiliza por perdas financeiras externas decorrentes do uso da plataforma.</li>
-                   <li>Manteremos a plataforma segura, mas não podemos garantir 100% de disponibilidade contínua.</li>
+                   <li>Código, design e interface são propriedade exclusiva de Elias Chanisso.</li>
+                   <li>Proibido copiar, modificar ou fazer engenharia reversa sem autorização.</li>
                  </ul>
 
-                 <h4 className="font-bold text-slate-900 dark:text-white mt-4">Rescisão</h4>
+                 <h4 className="font-bold text-slate-900 dark:text-white mt-4">Limitação de responsabilidade</h4>
                  <ul className="list-disc pl-5 space-y-1">
-                   <li>Usuários podem cancelar suas contas a qualquer momento.</li>
-                   <li>Biz-Flow pode suspender contas que violem os termos de uso.</li>
+                   <li>Serviço fornecido "tal como está". Não garantimos disponibilidade ininterrupta.</li>
+                   <li>Não nos responsabilizamos por perdas financeiras ou danos indiretos.</li>
                  </ul>
 
-                 <h4 className="font-bold text-slate-900 dark:text-white mt-4">Modificações</h4>
+                 <h4 className="font-bold text-slate-900 dark:text-white mt-4">Modificações e legislação</h4>
                  <ul className="list-disc pl-5 space-y-1">
-                   <li>Biz-Flow pode atualizar estes termos e políticas periodicamente.</li>
-                   <li>As alterações entram em vigor imediatamente após publicação na plataforma.</li>
+                   <li>Termos podem ser alterados mediante notificação. Uso contínuo implica aceitação.</li>
+                   <li>Regidos pela legislação de Moçambique. Conflitos resolvidos nos tribunais competentes.</li>
                  </ul>
               </div>
             )}
