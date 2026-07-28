@@ -4,6 +4,7 @@ import App from './App';
 import { ToastProvider } from '../components/ToastContext';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import { AuthProvider } from '../features/auth/AuthContext';
+import { AuthGuard } from '../features/auth/AuthGuard';
 import '../index.css';
 import '@fortawesome/fontawesome-free/css/all.min.css';
 
@@ -50,9 +51,11 @@ root.render(
   <React.StrictMode>
     <ErrorBoundary>
       <AuthProvider>
-        <ToastProvider>
-          <App onReady={removeSplash} />
-        </ToastProvider>
+        <AuthGuard>
+          <ToastProvider>
+            <App onReady={removeSplash} />
+          </ToastProvider>
+        </AuthGuard>
       </AuthProvider>
     </ErrorBoundary>
   </React.StrictMode>
