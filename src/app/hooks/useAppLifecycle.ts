@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { getDirectoryHandle, getHistory, getSavedClients, getSavedProducts, getCompanySettings } from '../../services/storageService';
+import { fullSync } from '../../services/syncService';
 import { CompanySettings, ReceiptData, SavedClient, SavedProduct } from '../../types';
 
 interface UseAppLifecycleParams {
@@ -76,7 +77,6 @@ export const useAppLifecycle = ({
       if (localSettings) {
         setCompanySettings(prev => ({ ...prev, ...localSettings, plan: 'PRO' }));
         
-        // Apply theme from settings
         const theme = localSettings.theme || 'light';
         if (theme === 'dark') {
           document.documentElement.classList.add('dark');
@@ -84,20 +84,27 @@ export const useAppLifecycle = ({
           document.documentElement.classList.remove('dark');
         }
       } else {
-        // Check localStorage for theme preference
         const savedTheme = localStorage.getItem('bizflow-theme') || 'light';
         if (savedTheme === 'dark') {
           document.documentElement.classList.add('dark');
         }
       }
 
-      // Load history, clients, products from local storage
+      // Sync cloud → local (pull) / local → cloud (push)
+      if (userId !== 'local' && navigator.onLine) {
+        try {
+          await fullSync(userId);
+        } catch {
+          // Sync falhou — dados locais continuam disponíveis
+        }
+      }
+
+      // Reload from IndexedDB (inclui dados acabados de sincronizar)
       const hist = await getHistory(userId);
       setHistory(hist);
       setSavedClients(await getSavedClients(userId));
       setSavedProducts(await getSavedProducts(userId));
 
-      // Navigate to home if on loading screen
       const view = currentViewRef.current;
       if (['loading', 'login', 'register', 'forgotPassword'].includes(view)) {
         setCurrentView('home');
@@ -109,7 +116,6 @@ export const useAppLifecycle = ({
       }
     } catch (error) {
       console.error('loadLocalData error:', error);
-      // Fallback: show home even with error
       const view = currentViewRef.current;
       if (['loading', 'login', 'register', 'forgotPassword'].includes(view)) {
         setCurrentView('home');
