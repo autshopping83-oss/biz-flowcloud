@@ -3,7 +3,6 @@ import ReactDOM from 'react-dom/client';
 import App from './App';
 import { ToastProvider } from '../components/ToastContext';
 import { ErrorBoundary } from '../components/ErrorBoundary';
-import { AuthProvider } from '../features/auth/AuthContext';
 import '../index.css';
 import '@fortawesome/fontawesome-free/css/all.min.css';
 
@@ -49,11 +48,9 @@ const root = ReactDOM.createRoot(rootElement);
 root.render(
   <React.StrictMode>
     <ErrorBoundary>
-      <AuthProvider>
       <ToastProvider>
         <App onReady={removeSplash} />
       </ToastProvider>
-      </AuthProvider>
     </ErrorBoundary>
   </React.StrictMode>
 );

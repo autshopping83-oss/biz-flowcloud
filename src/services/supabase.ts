@@ -1,19 +1,25 @@
 // src/services/supabase.ts
-import { createClient } from '@supabase/supabase-js';
+// Web-only mode — sem dependência externa do Supabase
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const noop = Promise.resolve();
+const noopData = Promise.resolve({ data: null, error: null });
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error(
-    'Supabase credentials not found. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in .env.local'
-  );
-}
-
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-    detectSessionInUrl: true,
+export const supabase = {
+  get auth() {
+    return {
+      onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
+      getSession: () => Promise.resolve({ data: { session: null } }),
+      signInWithPassword: () => Promise.resolve({ error: null }),
+      signUp: () => Promise.resolve({ error: null }),
+      signOut: () => Promise.resolve(),
+      resetPasswordForEmail: () => Promise.resolve({ error: null }),
+      signInWithOAuth: () => Promise.resolve(),
+    };
   },
-});
+  from: (_table: string) => ({
+    upsert: () => noop,
+    insert: () => noop,
+    select: () => noopData,
+  }),
+  rpc: () => noopData,
+};

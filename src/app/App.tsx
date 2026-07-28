@@ -63,6 +63,7 @@ const App: React.FC<{ onReady?: () => void }> = ({ onReady }) => {
   const fMoney = (val: number) => formatMoney(val, companySettings.currency, companySettings.language);
 
   useAppLifecycle({
+    userId: 'local',
     currentView, isGuest, setCurrentView: (v: string) => setCurrentView(v as AppView), setIsGuest,
     setHistory, setSavedClients, setSavedProducts, setCompanySettings,
     setIsOnline, setLocalDirHandle: () => {}, onReady,
