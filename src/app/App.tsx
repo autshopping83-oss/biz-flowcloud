@@ -1,8 +1,7 @@
 /**
  * App - Componente principal orquestrador
- * Refatorado: views e hooks extraídos para módulos separados.
- * Fluxo: App → useAppLifecycle + useDocumentEditor → Views
- * v4: Web PWA pura - sem Supabase, sem Android, sem APIs externas
+ * Fluxo: AuthGuard → App → useAuth(userId) → useAppLifecycle + useDocumentEditor → Views
+ * Cada utilizador autenticado vê apenas os seus dados (IndexedDB por userId).
  */
 
 import React, { useState, lazy, Suspense } from 'react';
@@ -10,6 +9,7 @@ import { ReceiptData, CompanySettings, SavedClient, SavedProduct } from '../type
 import { Logo } from '../components/Logo';
 import { V } from '../_cachebuster/version';
 import { useToast } from '../components/ToastContext';
+import { useAuth } from '../features/auth/AuthContext';
 import { useAppLifecycle } from './hooks/useAppLifecycle';
 import { useDocumentEditor } from '../features/documents/hooks/useDocumentEditor';
 import { getTranslation, formatMoney } from '../services/translationService';
@@ -45,6 +45,9 @@ const DefaultSettings: CompanySettings = {
 type AppView = 'loading' | 'home' | 'history' | 'app';
 
 const App: React.FC<{ onReady?: () => void }> = ({ onReady }) => {
+  const { user, signOut } = useAuth();
+  const userId = user?.id || 'local';
+  
   const [currentView, setCurrentView] = useState<AppView>('loading');
   const [isGuest, setIsGuest] = useState(false);
   const [history, setHistory] = useState<ReceiptData[]>([]);
@@ -54,7 +57,7 @@ const App: React.FC<{ onReady?: () => void }> = ({ onReady }) => {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [installPrompt, setInstallPrompt] = useState<Window['deferredPrompt']>(null);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
-  
+
   // Version tracking - force rebuild
   console.debug('BizFlow version:', V);
 
@@ -62,15 +65,24 @@ const App: React.FC<{ onReady?: () => void }> = ({ onReady }) => {
   const t = (key: string) => getTranslation(companySettings.language, key);
   const fMoney = (val: number) => formatMoney(val, companySettings.currency, companySettings.language);
 
+  const handleLogout = async () => {
+    await signOut();
+    setIsGuest(false);
+    setCurrentView('loading');
+    setHistory([]);
+    setSavedClients([]);
+    setSavedProducts([]);
+  };
+
   useAppLifecycle({
-    userId: 'local',
+    userId,
     currentView, isGuest, setCurrentView: (v: string) => setCurrentView(v as AppView), setIsGuest,
     setHistory, setSavedClients, setSavedProducts, setCompanySettings,
     setIsOnline, setLocalDirHandle: () => {}, onReady,
   });
 
   const editor = useDocumentEditor({
-    isGuest, history, companySettings,
+    userId, isGuest, history, companySettings,
     setHistory, setCurrentView: (v: string) => setCurrentView(v as AppView), notify,
   });
 
@@ -96,11 +108,11 @@ const App: React.FC<{ onReady?: () => void }> = ({ onReady }) => {
       {currentView === 'loading' && <PageLoader />}
       {currentView === 'home' && (
         <Dashboard history={history} companySettings={companySettings}
-          onLogout={() => { setIsGuest(false); setCurrentView('loading'); }}
+          onLogout={handleLogout}
           onNewDocument={editor.initNewDocument} onOpenSettings={() => setShowSettingsModal(true)}
           onLoadDocument={(doc) => { editor.setFormData(doc); setCurrentView('app'); editor.setMobileTab('preview'); }}
           onViewHistory={() => setCurrentView('history')} onToggleTheme={toggleTheme}
-          t={t} userId="local" onDeleteDocument={editor.handleDeleteDocument}
+          t={t} userId={userId} onDeleteDocument={editor.handleDeleteDocument}
           onInstallApp={handleInstallApp} showInstallButton={!!installPrompt} />
       )}
       {currentView === 'history' && (
@@ -117,14 +129,14 @@ const App: React.FC<{ onReady?: () => void }> = ({ onReady }) => {
           mobileTab={editor.mobileTab} savedClients={savedClients} savedProducts={savedProducts}
           receiptRef={editor.receiptRef} ghostReceiptRef={editor.ghostReceiptRef} thermalReceiptRef={editor.thermalReceiptRef}
           t={t} fMoney={fMoney}
-          onBack={() => isGuest ? setCurrentView('loading') : setCurrentView('home')}
+          onBack={() => setCurrentView('home')}
           onOpenSettings={() => setShowSettingsModal(true)} onShareWhatsApp={editor.handleShareWhatsApp}
           onOpenShareModal={() => editor.setShowShareModal(true)} onSetMobileTab={editor.setMobileTab}
           onFormDataChange={editor.handleFormDataChange} onNewItemChange={editor.handleNewItemChange}
           onAddItem={editor.handleAddItem} onRemoveItem={editor.handleRemoveItem}
           onEnhanceDescription={editor.handleEnhanceDescription} onInitNew={editor.initNewDocument}
           onSign={() => editor.setShowSignatureModal(true)} onClearClient={editor.handleClearClient}
-          onThemeChange={editor.handleThemeChange} userId="local" />
+          onThemeChange={editor.handleThemeChange} userId={userId} />
       )}
       {showSettingsModal && (
         <SettingsModal companySettings={companySettings} onClose={() => setShowSettingsModal(false)}
@@ -132,13 +144,13 @@ const App: React.FC<{ onReady?: () => void }> = ({ onReady }) => {
           onLogoChange={(e) => { const f = e.target.files?.[0]; if (!f) return; const r = new FileReader(); r.onloadend = () => setCompanySettings(p => ({ ...p, logo: r.result as string })); r.readAsDataURL(f); }}
           onStampUpload={(e) => { const f = e.target.files?.[0]; if (!f) return; const r = new FileReader(); r.onloadend = () => setCompanySettings(p => ({ ...p, customStamp: r.result as string })); r.readAsDataURL(f); }}
           onRequestFolderPermission={async () => { await editor.requestFolderPermission(); }}
-          onSaveSettings={async () => { const { saveCompanySettings } = await import('../services/storageService'); await saveCompanySettings(companySettings, 'local'); notify('Definições guardadas!', 'success'); setShowSettingsModal(false); }}
+          onSaveSettings={async () => { const { saveCompanySettings } = await import('../services/storageService'); await saveCompanySettings(companySettings, userId); notify('Definições guardadas!', 'success'); setShowSettingsModal(false); }}
           isSavingSettings={false} localDirHandle={editor.localDirHandle}
           onSaveSignature={editor.saveSettingsSignature} onClearSignature={editor.clearSettingsSignature} settingsSignatureCanvasRef={editor.settingsSignatureCanvasRef}
           handleSettingsSignatureStartDrawing={editor.handleSettingsSignatureStartDrawing} handleSettingsSignatureDraw={editor.handleSettingsSignatureDraw} handleSettingsSignatureStopDrawing={editor.handleSettingsSignatureStopDrawing} />
       )}
       {editor.showShareModal && (
-        <DocumentShareModal formData={editor.formData} companySettings={companySettings} userId="local"
+        <DocumentShareModal formData={editor.formData} companySettings={companySettings} userId={userId}
           isGeneratingPdf={editor.isGeneratingPdf} isPrinting={editor.isPrinting}
           onGeneratePDF={editor.handleGeneratePDF} onPrintThermal={editor.handlePrintThermal}
           onClose={() => editor.setShowShareModal(false)} t={t} fMoney={fMoney} />

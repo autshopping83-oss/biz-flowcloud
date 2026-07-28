@@ -18,6 +18,7 @@ const InitialReceipt: ReceiptData = {
 };
 
 interface UseDocumentEditorProps {
+  userId: string;
   isGuest: boolean;
   history: ReceiptData[];
   companySettings: CompanySettings;
@@ -27,7 +28,7 @@ interface UseDocumentEditorProps {
 }
 
 export function useDocumentEditor({
-  isGuest, history, companySettings,
+  userId, isGuest, history, companySettings,
   setHistory, setCurrentView, notify,
 }: UseDocumentEditorProps) {
   const [formData, setFormData] = useState<ReceiptData>(InitialReceipt);
@@ -62,7 +63,7 @@ export function useDocumentEditor({
     notify,
     handleSave: async (silent = false) => {
       if (!formData.clientName || formData.items.length === 0) return;
-      const newHistory = await saveReceipt(formData, 'local');
+      const newHistory = await saveReceipt(formData, userId);
       setHistory(newHistory);
       if (!silent) notify('Dados guardados.', 'success');
     },
@@ -159,7 +160,7 @@ export function useDocumentEditor({
   }, [signatureCanvas]);
 
   const handleDeleteDocument = useCallback(async (id: string) => {
-    const updated = await deleteReceipt(id, 'local');
+    const updated = await deleteReceipt(id, userId);
     setHistory(updated);
   }, [setHistory]);
 
