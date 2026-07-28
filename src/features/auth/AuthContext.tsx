@@ -1,6 +1,6 @@
 // src/features/auth/AuthContext.tsx
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
-import { User, AuthError, AuthApiError } from '@supabase/supabase-js';
+import type { User, AuthError, AuthApiError } from '@supabase/supabase-js';
 import { supabase } from '../../services/supabase';
 
 interface AuthState {
@@ -25,28 +25,29 @@ export const useAuth = () => {
 };
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [state, setState] = useState<AuthState>({ user: null, loading: true });
+  const [state, setState] = useState<AuthState>({ user: null, loading: !!supabase });
   const loadingRef = useRef(true);
 
   useEffect(() => {
+    if (!supabase) {
+      loadingRef.current = false;
+      setState({ user: null, loading: false });
+      return;
+    }
+
     let cancelled = false;
 
     const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
       if (cancelled) return;
-      // Ignorar INITIAL_SESSION (vem sempre antes de SIGNED_IN)
-      // e TOKEN_REFRESHED (mesmo user, re-render desnecessário)
       if (event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED') return;
       loadingRef.current = false;
       setState({ user: session?.user ?? null, loading: false });
 
-      // Sync profile to Supabase on sign in
       if (event === 'SIGNED_IN' && session?.user) {
         syncProfile(session.user).catch(() => {});
       }
     });
 
-    // Fallback: se onAuthStateChange não disparar SIGNED_IN (ex: rede),
-    // getSession() garante que loading termina
     supabase.auth.getSession()
       .then(({ data: { session } }) => {
         if (!cancelled && loadingRef.current) {
@@ -82,21 +83,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signIn = async (email: string, password: string) => {
+    if (!supabase) return { error: 'Supabase não configurado.' };
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     return { error: error ? extractError(error) : null };
   };
 
   const signUp = async (email: string, password: string) => {
+    if (!supabase) return { error: 'Supabase não configurado.' };
     const { error } = await supabase.auth.signUp({ email, password });
     return { error: error ? extractError(error) : null };
   };
 
   const signOut = async () => {
+    if (!supabase) return;
     await supabase.auth.signOut();
-    // O listener onAuthStateChange já trata de limpar o estado
   };
 
   const resetPassword = async (email: string) => {
+    if (!supabase) return { error: 'Supabase não configurado.' };
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}?view=updatePassword`,
     });
@@ -104,6 +108,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signInWithGoogle = async () => {
+    if (!supabase) return;
     await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: { redirectTo: window.location.origin },
@@ -111,6 +116,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const syncProfile = async (user: User) => {
+    if (!supabase) return;
     const { error } = await supabase.from('profiles').upsert({
       id: user.id,
       email: user.email,

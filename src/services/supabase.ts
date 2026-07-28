@@ -1,25 +1,19 @@
 // src/services/supabase.ts
-// Web-only mode — sem dependência externa do Supabase
+import { createClient } from '@supabase/supabase-js';
 
-const noop = Promise.resolve();
-const noopData = Promise.resolve({ data: null, error: null });
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
-export const supabase = {
-  get auth() {
-    return {
-      onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
-      getSession: () => Promise.resolve({ data: { session: null } }),
-      signInWithPassword: () => Promise.resolve({ error: null }),
-      signUp: () => Promise.resolve({ error: null }),
-      signOut: () => Promise.resolve(),
-      resetPasswordForEmail: () => Promise.resolve({ error: null }),
-      signInWithOAuth: () => Promise.resolve(),
-    };
-  },
-  from: (_table: string) => ({
-    upsert: () => noop,
-    insert: () => noop,
-    select: () => noopData,
-  }),
-  rpc: () => noopData,
-};
+export const supabase = supabaseUrl && supabaseAnonKey
+  ? createClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true,
+      },
+    })
+  : null;
+
+if (!supabase) {
+  console.warn('Supabase não configurado — a funcionar em modo offline');
+}
