@@ -1,0 +1,18 @@
+{
+    "key_files": {
+        "gradles": [
+            "/root/projetos/meu-app/biz-flowcloud/android/build.gradle",
+            "/root/projetos/meu-app/biz-flowcloud/android/capacitor.settings.gradle",
+            "/root/projetos/meu-app/biz-flowcloud/android/settings.gradle",
+            "/root/projetos/meu-app/biz-flowcloud/android/variables.gradle",
+            "/root/projetos/meu-app/biz-flowcloud/android/app/build.gradle",
+            "/root/projetos/meu-app/biz-flowcloud/android/app/capacitor.build.gradle",
+            "/root/projetos/meu-app/biz-flowcloud/android/capacitor-cordova-android-plugins/build.gradle",
+            "/root/projetos/meu-app/biz-flowcloud/android/capacitor-cordova-android-plugins/cordova.variables.gradle"
+        ],
+        "manifests": [
+            "/root/projetos/meu-app/biz-flowcloud/android/app/src/main/AndroidManifest.xml",
+            "/root/projetos/meu-app/biz-flowcloud/android/capacitor-cordova-android-plugins/src/main/AndroidManifest.xml"
+        ]
+    }
+}

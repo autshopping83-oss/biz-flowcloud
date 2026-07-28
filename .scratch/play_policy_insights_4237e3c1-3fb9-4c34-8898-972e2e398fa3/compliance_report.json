@@ -1,0 +1,94 @@
+{
+    "data_safety_mismatches": [],
+    "findings": [
+        {
+            "evidence": "AuthContext.tsx lines 99-104: signOut() only calls supabase.auth.signOut() and clears local state (setState({ user: null })) \u2014 it does NOT perform a remote account deletion or send a delete/purge API call. AuthService.ts lines 38-42: signOut() calls supabase.auth.signOut() and logs warnings but never triggers account deletion. No file in the codebase contains any account deletion code (searched for 'deleteAccount', 'delete_account', 'apagar.conta', 'removeAccount', 'deletar', 'remove account'). No Profile or Settings pages exist where a deletion option could be placed.\n\n**Critic Verification**: AuthContext.tsx lines 99-104: signOut() only calls supabase.auth.signOut() and clears local state \u2014 no remote account deletion. AuthService.ts lines 38-42: signOut() only calls supabase.auth.signOut(). No deleteAccount, delete_account, removeAccount, or similar function exists anywhere in the codebase. Supabase auth.signOut() only invalidates the session, it does not delete the user record from the remote system. (Confidence: High)",
+            "files_involved": [
+                "/root/projetos/meu-app/biz-flowcloud/src/features/auth/AuthContext.tsx",
+                "/root/projetos/meu-app/biz-flowcloud/src/features/auth/AuthService.ts"
+            ],
+            "finding_id": "23",
+            "issue_summary": "App handles user accounts via Supabase Auth but NO in-app account deletion mechanism exists. The signOut() method only clears the local session without deleting the remote user record.",
+            "policy_id": "account_deletion",
+            "recommendation": "Implement in-app deletion: Create a highly discoverable path (e.g., under User Profile / Account Settings) to let users initiate account deletion directly in the app. The deletion must call a Supabase Admin API or Edge Function to permanently remove the user's remote database records, not merely sign them out.",
+            "severity": "IMPORTANT"
+        },
+        {
+            "evidence": "Manifest: requestLegacyExternalStorage=true at line 11, WRITE_EXTERNAL_STORAGE at line 55 (maxSdkVersion=28), READ_EXTERNAL_STORAGE at line 57 (maxSdkVersion=32). main.tsx:31 creates 'Biz-flow/' folder via Capacitor Filesystem mkdir(Directory.Documents). nativeFileService.ts writes/reads PDFs via Capacitor Filesystem to Directory.Documents/Biz-flow/. DocumentShareModal.tsx and useDocumentActions.ts similarly use Capacitor Filesystem scoped API. No direct Environment.getExternalStorageDirectory() usage anywhere in the codebase. localStorage reference in assets is browser-level web storage, unrelated to Android file permissions.\n\n**Critic Verification**: AndroidManifest.xml lines 55-58 declare WRITE_EXTERNAL_STORAGE (maxSdkVersion=28) and READ_EXTERNAL_STORAGE (maxSdkVersion=32) with requestLegacyExternalStorage=true (line 11). All file operations in nativeFileService.ts, main.tsx, DocumentShareModal.tsx, and useDocumentActions.ts exclusively use the Capacitor Filesystem plugin with Directory.Documents (scoped storage API). No Environment.getExternalStorageDirectory() usage exists. These are legacy declarations irrelevant on targetSdk=35. (Confidence: High)",
+            "files_involved": [
+                "/root/projetos/meu-app/biz-flowcloud/android/app/src/main/AndroidManifest.xml",
+                "/root/projetos/meu-app/biz-flowcloud/src/app/hooks/useDocumentActions.ts",
+                "/root/projetos/meu-app/biz-flowcloud/src/app/main.tsx",
+                "/root/projetos/meu-app/biz-flowcloud/src/components/DocumentShareModal.tsx",
+                "/root/projetos/meu-app/biz-flowcloud/src/services/nativeFileService.ts"
+            ],
+            "finding_id": "21",
+            "issue_summary": "App declares READ_EXTERNAL_STORAGE (maxSdkVersion=32), WRITE_EXTERNAL_STORAGE (maxSdkVersion=28), and uses requestLegacyExternalStorage=true, but all file operations use Capacitor Filesystem plugin with Directory.Documents (scoped storage on API 30+). No raw file path access found. The permissions are legacy artifacts from pre-scoped-storage era.",
+            "policy_id": "files_and_docs_policy",
+            "recommendation": "Remove READ_EXTERNAL_STORAGE and WRITE_EXTERNAL_STORAGE from AndroidManifest.xml. Remove android:requestLegacyStorage=\"true\" (only applies to API 29, irrelevant on targetSdk=35). The Capacitor Filesystem plugin already uses scoped storage via the SAF on API 30+ and works correctly without these permissions.",
+            "severity": "IMPORTANT"
+        },
+        {
+            "evidence": "AuthPage.tsx (lines 60-207) renders a full login/signup/reset UI with email/password form and Google Sign-In button. ConnectAccountModal.tsx (lines 76-182) provides an in-app modal for account connection with Supabase. AuthContext.tsx (lines 40-145) manages auth state and exposes signIn, signUp, signOut, resetPassword, signInWithGoogle. AuthService.ts (lines 13-62) implements actual Supabase Auth API calls (signInWithPassword, signUp, signOut, signInWithOAuth). Users can register and authenticate via email/password or Google.\n\n**Critic Verification**: AuthPage.tsx (lines 60-207) renders a full login/signup/reset UI with email/password form and Google Sign-In. ConnectAccountModal.tsx (lines 76-182) provides an in-app account connection modal. AuthContext.tsx (lines 40-145) manages auth state and exposes signIn/signUp/signOut/resetPassword/signInWithGoogle. AuthService.ts (lines 13-62) implements actual Supabase Auth API calls. All cited evidence is accurate. (Confidence: High)",
+            "files_involved": [
+                "/root/projetos/meu-app/biz-flowcloud/src/features/auth/AuthContext.tsx",
+                "/root/projetos/meu-app/biz-flowcloud/src/features/auth/AuthPage.tsx",
+                "/root/projetos/meu-app/biz-flowcloud/src/features/auth/AuthService.ts",
+                "/root/projetos/meu-app/biz-flowcloud/src/features/auth/ConnectAccountModal.tsx"
+            ],
+            "finding_id": "22",
+            "issue_summary": "Login screen detected. The app implements a full authentication flow with email/password sign-in, sign-up, password reset, and Google OAuth, gating features behind a user account.",
+            "policy_id": "login_credentials",
+            "recommendation": "Administrative Console Requirements: Because your app implements a login flow, you MUST complete two manual setup steps in the Play Console dashboard: (1) Submit active, non-expiring test credentials so Google Play reviewers can access gated features. (2) Submit a public-facing web link for account deletion to satisfy Google Play's data deletion policies.",
+            "severity": "IMPORTANT"
+        },
+        {
+            "evidence": "Manifest: READ_EXTERNAL_STORAGE at line 57 with maxSdkVersion=32. WRITE_EXTERNAL_STORAGE at line 55 with maxSdkVersion=28. requestLegacyExternalStorage=true at line 11. Photo usage: SettingsModal.tsx:64 (logo upload, accept=\"image/*\"), SettingsModal.tsx:134 (stamp upload, accept=\"image/*\"), FinanceManager.tsx:267 (receipt scan, accept=\"image/*\" capture=\"environment\"). App is Biz-flow.cloud (business finance app), NOT a dedicated media manager.\n\n**Critic Verification**: Confirmed: AndroidManifest.xml:55-58 declares WRITE_EXTERNAL_STORAGE (maxSdkVersion=28), READ_EXTERNAL_STORAGE (maxSdkVersion=32), and requestLegacyExternalStorage=true (line 11). All image operations use <input type='file' accept='image/*'>: SettingsModal.tsx:64 (logo upload), SettingsModal.tsx:134 (stamp upload), FinanceManager.tsx:267 (receipt scan with capture='environment'). The system file picker invoked by these inputs does not require broad storage permissions on API 19+. Manifest permissions are vestigial. (Confidence: High)",
+            "files_involved": [
+                "/root/projetos/meu-app/biz-flowcloud/android/app/src/main/AndroidManifest.xml",
+                "/root/projetos/meu-app/biz-flowcloud/src/components/FinanceManager.tsx",
+                "/root/projetos/meu-app/biz-flowcloud/src/components/SettingsModal.tsx"
+            ],
+            "finding_id": "20",
+            "issue_summary": "App declares READ_EXTERNAL_STORAGE (maxSdkVersion=32) despite all image handling being user-initiated single-file selection via <input type=\"file\" accept=\"image/*\"> \u2014 logo upload, stamp upload, and receipt scanning. TargetSdk=35 makes this a no-op on API 33+, but the broad storage permission is still in the manifest and is unnecessary since the WebView file chooser does not require it.",
+            "policy_id": "photo_video_access_policy",
+            "recommendation": "Remove READ_EXTERNAL_STORAGE and WRITE_EXTERNAL_STORAGE permissions from AndroidManifest.xml \u2014 the app's image selection flows use <input type=\"file\"> which invokes the system file picker without requiring broad storage permissions on any modern Android version. Remove requestLegacyExternalStorage=\"true\". No functional impact since all image operations are user-initiated and single-file.",
+            "severity": "IMPORTANT"
+        }
+    ],
+    "manual_review": [],
+    "metadata": {
+        "app_id": "biz-flow.cloud",
+        "overall_compliance": "Needs review",
+        "scan_date": "2026-07-16T18:20:15.785978"
+    },
+    "suggested_declaration": {
+        "collected_data": [
+            {
+                "data_type": "Email address",
+                "linked_to_user": true,
+                "purpose": "App functionality"
+            },
+            {
+                "data_type": "Emails",
+                "linked_to_user": true,
+                "purpose": "App functionality"
+            },
+            {
+                "data_type": "Files and docs",
+                "linked_to_user": true,
+                "purpose": "App functionality - Email document sharing"
+            },
+            {
+                "data_type": "Purchase history",
+                "linked_to_user": true,
+                "purpose": "Cloud sync and backup"
+            },
+            {
+                "data_type": "User IDs",
+                "linked_to_user": true,
+                "purpose": "App functionality (Authentication)"
+            }
+        ]
+    }
+}

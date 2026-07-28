@@ -1,0 +1,17 @@
+{
+  "14": {
+    "action": "VERIFIED",
+    "confidence": "High",
+    "critic_justification": "Confirmed: api/auth/callback.js:34 stores tokens.email via salvarToken(); api/db.js:43-46 persists email in user_tokens table; index-BMHFFNQZ.js contains @supabase/auth-js client used for sign-up/sign-in which transmits email to Supabase Auth endpoint. All three paths require explicit user action (sign-up, sign-in, or Gmail OAuth connection). Destination is first-party Supabase/PostgreSQL backend."
+  },
+  "16": {
+    "action": "VERIFIED",
+    "confidence": "High",
+    "critic_justification": "Confirmed: email-service/src/emailService.js:37-49 (enviarEmail function) sends recipient email, subject, body, and PDF attachment via Gmail SMTP OAuth2; routes.js:70-104 exposes POST /enviar requiring userId, destinatario, assunto, pdfBase64 with server-side validation; server.js wires the express server. User explicitly fills form and clicks send to trigger transfer through the developer's backend to Gmail SMTP."
+  },
+  "20": {
+    "action": "VERIFIED",
+    "confidence": "High",
+    "critic_justification": "Confirmed: AndroidManifest.xml:55-58 declares WRITE_EXTERNAL_STORAGE (maxSdkVersion=28), READ_EXTERNAL_STORAGE (maxSdkVersion=32), and requestLegacyExternalStorage=true (line 11). All image operations use <input type='file' accept='image/*'>: SettingsModal.tsx:64 (logo upload), SettingsModal.tsx:134 (stamp upload), FinanceManager.tsx:267 (receipt scan with capture='environment'). The system file picker invoked by these inputs does not require broad storage permissions on API 19+. Manifest permissions are vestigial."
+  }
+}

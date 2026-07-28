@@ -1,0 +1,453 @@
+{
+    "findings": [
+        {
+            "psl_constant": "FILES_AND_DOCS",
+            "policy_id": "data_safety_section",
+            "issue_summary": "User-Initiated Collection: Documents/PDFs are generated client-side (jspdf) and transmitted to recipients via user-initiated email sharing (api/enviar.js POST endpoint) or Android Share Sheet (Capacitor Share). Exempt from prominent disclosure per Case 3 but must be declared in the Play Store Data Safety form.",
+            "severity": "IMPORTANT",
+            "files_involved": [
+                "/root/projetos/meu-app/biz-flowcloud/android/app/src/main/assets/public/assets/index-BMHFFNQZ.js",
+                "/root/projetos/meu-app/biz-flowcloud/android/app/src/main/assets/public/assets/vendor-pdf-J-Nz47Vc.js",
+                "/root/projetos/meu-app/biz-flowcloud/api/enviar.js",
+                "/root/projetos/meu-app/biz-flowcloud/src/components/DocumentShareModal.tsx"
+            ],
+            "evidence": "api/enviar.js (lines 17-56): PDF base64 data is POSTed to serverless API endpoint when user explicitly fills recipient email and triggers send. DocumentShareModal.tsx (lines 205-257): handleSendEmail generates PDF, then sends via api/enviar.js. vendor-pdf-J-Nz47Vc.js: jspdf PDF generation library (client-side only). index-BMHFFNQZ.js: localStorage used for Supabase auth session persistence (local only).",
+            "recommendation": "Declare 'App functionality - Email document sharing' in Play Store Data Safety section for FILES_AND_DOCS under user-initiated data collection (Case 3: transferred, user-initiated, first-party).",
+            "is_transferred": true,
+            "user_initiated": true,
+            "is_third_party": false,
+            "prominent_disclosure_status": "EXEMPT",
+            "purpose": "App functionality - Email document sharing",
+            "linked_to_user": true,
+            "worker_file": "worker_data_safety_part_1.json",
+            "finding_id": "1"
+        },
+        {
+            "psl_constant": "PURCHASE_HISTORY",
+            "policy_id": "data_safety_section",
+            "issue_summary": "User-Initiated Collection: Receipt/purchase data stored locally in Dexie (IndexedDB) is synced to Supabase backend when user clicks 'Sincronizar com a Nuvem' button in Dashboard. Exempt from prominent disclosure per Case 3 but must be declared in the Play Store Data Safety form.",
+            "severity": "IMPORTANT",
+            "files_involved": [
+                "/root/projetos/meu-app/biz-flowcloud/android/app/src/main/assets/public/assets/Dashboard-DF4sbnRU.js",
+                "/root/projetos/meu-app/biz-flowcloud/android/app/src/main/assets/public/assets/index-BMHFFNQZ.js",
+                "/root/projetos/meu-app/biz-flowcloud/android/app/src/main/assets/public/assets/syncService-DcwUexvy.js",
+                "/root/projetos/meu-app/biz-flowcloud/src/app/App.tsx",
+                "/root/projetos/meu-app/biz-flowcloud/src/components/Dashboard.tsx"
+            ],
+            "evidence": "syncService-DcwUexvy.js: Reads receipt data (type, number, date, client_name, items, total, etc.) from local Dexie database where userId matches, then upserts to Supabase 'documents' table via first-party backend. App.tsx (lines 128-143): handleSync is bound to Dashboard sync button. Dashboard.tsx (lines 133-139): User clicks 'Sincronizar com a Nuvem' to trigger sync. User must be online (isConnected check) and explicitly initiate sync.",
+            "recommendation": "Declare 'App functionality - Cloud sync and backup' in Play Store Data Safety section for PURCHASE_HISTORY under user-initiated data collection (Case 3: transferred, user-initiated, first-party).",
+            "is_transferred": true,
+            "user_initiated": true,
+            "is_third_party": false,
+            "prominent_disclosure_status": "EXEMPT",
+            "purpose": "Cloud sync and backup",
+            "linked_to_user": true,
+            "worker_file": "worker_data_safety_part_1.json",
+            "finding_id": "2"
+        },
+        {
+            "psl_constant": "MUSIC",
+            "policy_id": "data_safety_section",
+            "issue_summary": "Data Safety Compliant (Local-Only)",
+            "severity": "SUGGESTION",
+            "files_involved": [
+                "/root/projetos/meu-app/biz-flowcloud/android/app/src/main/assets/public/assets/Dashboard-DF4sbnRU.js",
+                "/root/projetos/meu-app/biz-flowcloud/android/app/src/main/assets/public/assets/FinanceManager-DKKYas9k.js",
+                "/root/projetos/meu-app/biz-flowcloud/android/app/src/main/assets/public/assets/HistoryPage-CaHIlZ_J.js"
+            ],
+            "evidence": "No music data transmission detected. The 'track' pattern in the bundled assets matches CSS class name 'tracking-tight' (a Tailwind CSS letter-spacing utility) and import aliases, not actual music file access or transfer. False positive confirmed per semantic grounding analysis.",
+            "recommendation": "No action required. The identified 'track' patterns are false positives unrelated to music data collection or transmission.",
+            "is_transferred": false,
+            "user_initiated": false,
+            "is_third_party": false,
+            "prominent_disclosure_status": "EXEMPT",
+            "purpose": "Local functionality only",
+            "linked_to_user": false,
+            "worker_file": "worker_data_safety_part_2.json",
+            "finding_id": "3"
+        },
+        {
+            "psl_constant": "USER_ACCOUNT",
+            "policy_id": "data_safety_section",
+            "issue_summary": "User-Initiated Collection",
+            "severity": "IMPORTANT",
+            "files_involved": [
+                "/root/projetos/meu-app/biz-flowcloud/src/features/auth/AuthService.ts",
+                "/root/projetos/meu-app/biz-flowcloud/src/services/supabase.ts",
+                "/root/projetos/meu-app/biz-flowcloud/android/app/src/main/assets/public/assets/index-BMHFFNQZ.js"
+            ],
+            "evidence": "User account credentials (email, password) transmitted to Supabase servers for authentication. AuthService.signIn() at AuthService.ts:16 calls supabase.auth.signInWithPassword({email, password}). AuthService.signUp() at AuthService.ts:28 calls supabase.auth.signUp({email, password}). Supabase client initialized at supabase.ts:12 with URL and anon key from env vars. The bundled index-BMHFFNQZ.js contains bundled Supabase auth-js library (signInWithIdToken, _exchangeCodeForSession, signInWithPassword). Transmission is user-initiated (explicit login/signup button click) to first-party service provider (Supabase).",
+            "recommendation": "User account data is transmitted to Supabase (first-party service provider) for authentication purposes. This must be declared in the Play Store Data Safety form under 'App functionality' with data type 'Email address' and 'Password'. No prominent in-app disclosure is required as the transmission is user-initiated (Case 3 per evaluation matrix).",
+            "is_transferred": true,
+            "user_initiated": true,
+            "is_third_party": false,
+            "prominent_disclosure_status": "EXEMPT",
+            "purpose": "App functionality (Authentication)",
+            "linked_to_user": true,
+            "worker_file": "worker_data_safety_part_2.json",
+            "finding_id": "4"
+        },
+        {
+            "psl_constant": "FINANCIAL_INFO_OTHER",
+            "policy_id": "data_safety_section",
+            "issue_summary": "Data Safety Compliant (Local-Only)",
+            "severity": "SUGGESTION",
+            "files_involved": [
+                "src/components/FinanceManager.tsx",
+                "src/services/storageService.ts",
+                "src/app/App.tsx",
+                "src/components/DocumentShareModal.tsx"
+            ],
+            "evidence": "Financial income data (transaction amounts, descriptions, categories, receipt totals) is stored exclusively in local Dexie/IndexedDB. The only data egress is user-initiated: sharing via mailto: or wa.me links triggered by explicit user action in DocumentShareModal/useDocumentActions. No background network transmission, no third-party SDKs, no analytics telemetry. The 'income' pattern in built JS files corresponds to local-only UI rendering of user-entered financial data.",
+            "recommendation": "No action needed. Financial data remains local-only. Ensure Play Store Data Safety form accurately reflects that no financial info is transmitted off-device in background.",
+            "is_transferred": false,
+            "user_initiated": false,
+            "is_third_party": false,
+            "prominent_disclosure_status": "EXEMPT",
+            "purpose": "Local functionality only (financial record-keeping and document generation)",
+            "linked_to_user": true,
+            "worker_file": "worker_data_safety_part_3.json",
+            "finding_id": "5"
+        },
+        {
+            "psl_constant": "PHOTOS",
+            "policy_id": "data_safety_section",
+            "issue_summary": "Data Safety Compliant (Local-Only)",
+            "severity": "SUGGESTION",
+            "files_involved": [
+                "src/app/App.tsx",
+                "src/components/FinanceManager.tsx",
+                "src/app/hooks/useDocumentActions.ts"
+            ],
+            "evidence": "No photo collection or transmission found. The only image handling is: (1) company logo upload via file input read as data URL and stored in local Dexie, (2) non-functional receipt scanner input (accept='image/*') that does nothing with the file, and (3) html2canvas DOM capture for local PDF generation. The 'image/*' pattern in vendor-pdf matches jsPDF library internals, not user photos. No photo gallery access, no camera upload, no photo transmission to any server.",
+            "recommendation": "No action needed. No photos are collected or transmitted. Ensure Play Store Data Safety form accurately reflects no photo access.",
+            "is_transferred": false,
+            "user_initiated": false,
+            "is_third_party": false,
+            "prominent_disclosure_status": "EXEMPT",
+            "purpose": "Local functionality only (not collected or transmitted)",
+            "linked_to_user": false,
+            "worker_file": "worker_data_safety_part_3.json",
+            "finding_id": "6"
+        },
+        {
+            "psl_constant": "OTHER_MESSAGES",
+            "policy_id": "data_safety_section",
+            "issue_summary": "Data Safety Compliant (Local-Only) - False positive. The 'xmpp' string appears in DOMPurify library's URI scheme whitelist regex allowing xmpp: protocol links in sanitized HTML. No XMPP message data is collected or transmitted by the application.",
+            "severity": "SUGGESTION",
+            "files_involved": [
+                "/root/projetos/meu-app/biz-flowcloud/android/app/src/main/assets/public/assets/purify.es-CC4Brkr_.js",
+                "/root/projetos/meu-app/biz-flowcloud/dist/assets/purify.es-CC4Brkr_.js"
+            ],
+            "evidence": "purify.es-CC4Brkr_.js line ~2 (byte offset 10325): DOMPurify URI scheme whitelist regex includes 'xmpp' as an allowed protocol. This is part of the DOMPurify library (a third-party HTML sanitizer) and does not indicate any actual XMPP message collection, processing, or transmission by the application.",
+            "recommendation": "No action needed. This is a false positive from the DOMPurify library. If the app ever implements actual XMPP messaging, ensure appropriate Play Store Data Safety declarations and prominent disclosure are added.",
+            "is_transferred": false,
+            "user_initiated": false,
+            "is_third_party": false,
+            "prominent_disclosure_status": "EXEMPT",
+            "purpose": "No collection - false positive in DOMPurify URI scheme whitelist",
+            "linked_to_user": false,
+            "worker_file": "worker_data_safety_part_4.json",
+            "finding_id": "7"
+        },
+        {
+            "psl_constant": "RACE_ETHNICITY",
+            "policy_id": "data_safety_section",
+            "issue_summary": "Data Safety Compliant (Local-Only) - False positive. All 'race' pattern matches are standard JavaScript identifiers (Promise.race, replace, trace) in minified bundled code. No race/ethnicity data is collected or transmitted.",
+            "severity": "SUGGESTION",
+            "files_involved": [
+                "/root/projetos/meu-app/biz-flowcloud/android/app/src/main/assets/public/assets/index-BMHFFNQZ.js",
+                "/root/projetos/meu-app/biz-flowcloud/android/app/src/main/assets/public/assets/index.es-ChRz2rLR.js",
+                "/root/projetos/meu-app/biz-flowcloud/android/app/src/main/assets/public/assets/web-5aCqmVzT.js"
+            ],
+            "evidence": "index-BMHFFNQZ.js: Matches for 'race' appear in React component frame error code (within words like 'replace', 'trace', 'DetermineComponentFrameRoot') and Dexie library code. index.es-ChRz2rLR.js: Match in bundled polyfill code. web-5aCqmVzT.js: Promise.race() used for Bluetooth connection timeout. None of these represent collection or processing of race/ethnicity information.",
+            "recommendation": "No action needed. This is a false positive from standard JavaScript identifiers in bundled libraries.",
+            "is_transferred": false,
+            "user_initiated": false,
+            "is_third_party": false,
+            "prominent_disclosure_status": "EXEMPT",
+            "purpose": "No collection - false positive in JS identifiers (Promise.race, replace, trace)",
+            "linked_to_user": false,
+            "worker_file": "worker_data_safety_part_4.json",
+            "finding_id": "8"
+        },
+        {
+            "psl_constant": "CRASH_LOGS",
+            "policy_id": "data_safety_section",
+            "issue_summary": "Data Safety Compliant (Local-Only) - React internal error handler found but no off-device crash reporting SDK (Sentry, Firebase Crashlytics, etc.) is configured. Error is only logged locally via console.error.",
+            "severity": "SUGGESTION",
+            "files_involved": [
+                "/root/projetos/meu-app/biz-flowcloud/android/app/src/main/assets/public/assets/index-BMHFFNQZ.js"
+            ],
+            "evidence": "index-BMHFFNQZ.js at byte 38750: React internal polyfill code contains 'process.emit(\"uncaughtException\", e)' followed by 'console.error(e)'. No crash reporting SDK dependencies found in package.json. No google-services.json found. The error handler is React's internal mechanism that logs errors locally via console.error.",
+            "recommendation": "No immediate action needed. If a crash reporting service (e.g., Firebase Crashlytics, Sentry) is added in the future, the developer must: (1) declare crash log collection in the Play Store Data Safety form, (2) add prominent in-app disclosure with affirmative consent before crash data transmission begins.",
+            "is_transferred": false,
+            "user_initiated": false,
+            "is_third_party": false,
+            "prominent_disclosure_status": "EXEMPT",
+            "purpose": "Local error handling only - React internal polyfill",
+            "linked_to_user": false,
+            "worker_file": "worker_data_safety_part_4.json",
+            "finding_id": "9"
+        },
+        {
+            "psl_constant": "CRASH_LOGS",
+            "policy_id": "data_safety_section",
+            "issue_summary": "Data Safety Compliant (Local-Only)",
+            "severity": "SUGGESTION",
+            "files_involved": [
+                "biz-flowcloud/android/app/src/main/assets/public/assets/vendor-react-B-V5UcMf.js",
+                "biz-flowcloud/dist/assets/index-PqeuXPtB.js",
+                "biz-flowcloud/src/components/ErrorBoundary.tsx",
+                "biz-flowcloud/src/app/main.tsx"
+            ],
+            "evidence": "The 'uncaughtException' pattern matches minified React runtime error handling code (Error class with .stack property). The app's only error handling is an ErrorBoundary.tsx and an unhandledrejection listener in main.tsx, both limited to local console.error logging. No third-party crash reporting SDK (Crashlytics, Sentry, etc.) is integrated \u2014 confirmed by package.json dependency review.",
+            "recommendation": "No action required. Crash log data remains on-device and is not transmitted off-device. To maintain compliance, ensure no crash reporting SDK is added without proper disclosure.",
+            "is_transferred": false,
+            "user_initiated": false,
+            "is_third_party": false,
+            "prominent_disclosure_status": "EXEMPT",
+            "purpose": "Local error handling only",
+            "linked_to_user": false,
+            "worker_file": "worker_data_safety_part_5.json",
+            "finding_id": "10"
+        },
+        {
+            "psl_constant": "PERFORMANCE_DIAGNOSTICS",
+            "policy_id": "data_safety_section",
+            "issue_summary": "Data Safety Compliant (Local-Only)",
+            "severity": "SUGGESTION",
+            "files_involved": [
+                "biz-flowcloud/android/app/src/main/assets/public/assets/index-BMHFFNQZ.js",
+                "biz-flowcloud/android/app/src/main/assets/public/assets/vendor-react-B-V5UcMf.js",
+                "biz-flowcloud/dist/assets/index-PqeuXPtB.js"
+            ],
+            "evidence": "The 'Debug' pattern matches minified React reconciler/scheduler variable names (e.g., `Na=r.unstable_setDisableYieldValue`) in the vendor bundle. No performance monitoring, frame rate tracking, latency measurement, or battery diagnostics code exists in the application source code. The app does not collect or transmit performance diagnostics data.",
+            "recommendation": "No action required. Performance diagnostics are not collected or transmitted. If future performance monitoring is added, ensure it is declared in the Play Store Data Safety form.",
+            "is_transferred": false,
+            "user_initiated": false,
+            "is_third_party": false,
+            "prominent_disclosure_status": "EXEMPT",
+            "purpose": "Not collected",
+            "linked_to_user": false,
+            "worker_file": "worker_data_safety_part_5.json",
+            "finding_id": "11"
+        },
+        {
+            "psl_constant": "WEB_BROWSING_HISTORY",
+            "policy_id": "data_safety_section",
+            "issue_summary": "Data Safety Compliant (Local-Only)",
+            "severity": "SUGGESTION",
+            "files_involved": [
+                "biz-flowcloud/android/app/src/main/assets/public/assets/index-BMHFFNQZ.js"
+            ],
+            "evidence": "The 'loadUrl' pattern matches the Supabase RealtimeClient class constructor code (WebSocket endpoint URL initialization). This is a standard WebSocket connection to Supabase for real-time features, not web browsing history tracking. The source code (src/) contains no WebView navigation tracking, URL history monitoring, or browsing-related data collection. The app is a single-page Capacitor application with no browsing history functionality.",
+            "recommendation": "No action required. Web browsing history is not collected or transmitted. No declaration needed in the Play Store Data Safety form.",
+            "is_transferred": false,
+            "user_initiated": false,
+            "is_third_party": false,
+            "prominent_disclosure_status": "EXEMPT",
+            "purpose": "Not collected",
+            "linked_to_user": false,
+            "worker_file": "worker_data_safety_part_5.json",
+            "finding_id": "12"
+        },
+        {
+            "psl_constant": "WEB_BROWSING_HISTORY",
+            "policy_id": "data_safety_section",
+            "issue_summary": "Data Safety Compliant (Local-Only)",
+            "severity": "SUGGESTION",
+            "files_involved": [
+                "/root/projetos/meu-app/biz-flowcloud/android/app/src/main/res/layout/activity_main.xml",
+                "/root/projetos/meu-app/biz-flowcloud/dist/assets/index-PqeuXPtB.js"
+            ],
+            "evidence": "The WebView element in activity_main.xml (line 9) is the standard Capacitor shell that renders the app's own React UI bundled in dist/. It does not access or collect the user's external web browsing history. The loadUrl pattern was not found in index-PqeuXPtB.js (false positive grep match). No web browsing history data collection logic exists in the codebase.",
+            "recommendation": "No action needed. WebView is used solely as the app rendering engine (Capacitor). This data type is not collected.",
+            "is_transferred": false,
+            "user_initiated": false,
+            "is_third_party": false,
+            "prominent_disclosure_status": "EXEMPT",
+            "purpose": "Local functionality only",
+            "linked_to_user": false,
+            "worker_file": "worker_data_safety_part_6.json",
+            "finding_id": "13"
+        },
+        {
+            "psl_constant": "EMAIL",
+            "policy_id": "data_safety_section",
+            "issue_summary": "User-Initiated Collection",
+            "severity": "IMPORTANT",
+            "files_involved": [
+                "/root/projetos/meu-app/biz-flowcloud/android/app/src/main/assets/public/assets/index-BMHFFNQZ.js",
+                "/root/projetos/meu-app/biz-flowcloud/api/auth/callback.js",
+                "/root/projetos/meu-app/biz-flowcloud/api/db.js"
+            ],
+            "evidence": "Email is collected in three paths: (1) user-provided email during Supabase Auth sign-up/sign-in via index-BMHFFNQZ.js (supabase-js auth client sends email to Supabase Auth endpoint); (2) Google OAuth callback at api/auth/callback.js:34 (tokens.email passed to salvarToken()); (3) stored server-side via api/db.js:43-46 in user_tokens table. All paths are user-initiated (user chooses to sign up or connect Gmail). Destination is the developer's own Supabase/PostgreSQL backend (first party).",
+            "recommendation": "Declare email collection in Play Store Data Safety form under 'App functionality' with user-initiated flag. No prominent in-app disclosure required since collection is user-initiated.",
+            "is_transferred": true,
+            "user_initiated": true,
+            "is_third_party": false,
+            "prominent_disclosure_status": "EXEMPT",
+            "purpose": "App functionality",
+            "linked_to_user": true,
+            "worker_file": "worker_data_safety_part_6.json",
+            "finding_id": "14"
+        },
+        {
+            "psl_constant": "EMAILS",
+            "policy_id": "data_safety_section",
+            "issue_summary": "Manual Sharing",
+            "severity": "SUGGESTION",
+            "files_involved": [
+                "/root/projetos/meu-app/biz-flowcloud/api/enviar.js"
+            ],
+            "evidence": "Full email content (subject, body, recipient, attachment) is transmitted when the user composes and sends an email via api/enviar.js:50 (transporter.sendMail()). The user provides all fields (destinatario, assunto, corpoHtml, pdfBase64) via POST request. The email is relayed through the developer's Vercel server to Gmail API (third-party delivery service chosen by the user). This is a manual sharing action by the user.",
+            "recommendation": "Policy exempt (manual sharing). No disclosure or Play Store declaration needed. User explicitly triggers the send action with full knowledge of the content being transmitted.",
+            "is_transferred": true,
+            "user_initiated": true,
+            "is_third_party": true,
+            "prominent_disclosure_status": "EXEMPT",
+            "purpose": "App functionality",
+            "linked_to_user": true,
+            "worker_file": "worker_data_safety_part_6.json",
+            "finding_id": "15"
+        },
+        {
+            "psl_constant": "EMAILS",
+            "policy_id": "data_safety_section",
+            "issue_summary": "User-Initiated Collection: Email data is sent via the backend email-service when the user explicitly triggers email sending. Disclosure exempt per Case 3, but EMAILS must be declared in the Play Store Data Safety form.",
+            "severity": "IMPORTANT",
+            "files_involved": [
+                "/root/projetos/meu-app/biz-flowcloud/email-service/src/emailService.js",
+                "/root/projetos/meu-app/biz-flowcloud/email-service/src/routes.js",
+                "/root/projetos/meu-app/biz-flowcloud/email-service/server.js"
+            ],
+            "evidence": "email-service/src/emailService.js lines 37-49: The enviarEmail function sends email data (subject line 'assunto', HTML body 'corpoHtml', recipient 'destinatario', sender name 'remetenteNome', PDF attachment) via Gmail SMTP. Routes defined in routes.js line 70-104 expose POST /enviar accepting userId, destinatario, assunto, corpoHtml, pdfBase64, pdfNome, remetenteNome \u2014 all transmitted to the developer's backend and then to Gmail. The user explicitly triggers this action (user fills form and clicks send).",
+            "recommendation": "Declare EMAILS data collection in the Play Store Data Safety section under 'App functionality'. Since the user initiates the email sending (Case 3), prominent in-app disclosure is exempt, but the data type must be listed in the store listing's Data Safety form.",
+            "is_transferred": true,
+            "user_initiated": true,
+            "is_third_party": false,
+            "prominent_disclosure_status": "EXEMPT",
+            "purpose": "App functionality",
+            "linked_to_user": true,
+            "worker_file": "worker_data_safety_part_7.json",
+            "finding_id": "16"
+        },
+        {
+            "psl_constant": "DEVICE_ID",
+            "policy_id": "data_safety_section",
+            "issue_summary": "Data Safety Compliant (Local-Only): No off-device transmission of device ID data detected. The getUniqueId pattern referenced in the data sources resolves to a minification artifact (SVG path parser code), not actual device ID collection. No IMEI, advertising ID, Firebase installation ID, or other device identifier collection was found in the source code.",
+            "severity": "SUGGESTION",
+            "files_involved": [
+                "/root/projetos/meu-app/biz-flowcloud/dist/assets/index.es-BQdJycl1.js"
+            ],
+            "evidence": "The getUniqueId string appears in dist/assets/index.es-BQdJycl1.js line 5 within SVG path parsing context (ARC commands, path data). grep of all source directories (src/, android/app/src/main/java/) for getUniqueId, deviceId, advertisingId, advertising_id returned no results indicating actual device ID collection. The Android manifest includes the AD_ID permission but no Ads SDK or analytics SDK that would use it is integrated in the build dependencies.",
+            "recommendation": "No action required. Verify in the Play Store Data Safety form that DEVICE_ID is not inadvertently declared. The AD_ID permission in manifest may be auto-included by Google Play Services and does not indicate active collection without a corresponding SDK.",
+            "is_transferred": false,
+            "user_initiated": false,
+            "is_third_party": false,
+            "prominent_disclosure_status": "EXEMPT",
+            "purpose": "Local functionality only",
+            "linked_to_user": false,
+            "worker_file": "worker_data_safety_part_7.json",
+            "finding_id": "17"
+        },
+        {
+            "psl_constant": "PERSONAL_INFO_OTHER",
+            "policy_id": "data_safety_section",
+            "issue_summary": "Data Safety Compliant (Local-Only): No off-device transmission of date of birth or similar personal info detected. The dob pattern referenced in the data sources is a minification artifact within React/Dexie/PDF vendor bundle code. No actual date of birth collection or transmission was found in the source code.",
+            "severity": "SUGGESTION",
+            "files_involved": [
+                "/root/projetos/meu-app/biz-flowcloud/dist/assets/index-PqeuXPtB.js"
+            ],
+            "evidence": "The dob string appears in dist/assets/index-PqeuXPtB.js within minified vendor library code (React/Dexie/Supabase bundle). grep of all source directories for dob, birth, nascimento, dataNasc returned no results related to date of birth collection or transmission. The one match in translationService.ts line 137 is a currency code 'NIO' (Cordoba Oro), unrelated to date of birth.",
+            "recommendation": "No action required. Verify in the Play Store Data Safety form that PERSONAL_INFO_OTHER is not inadvertently declared.",
+            "is_transferred": false,
+            "user_initiated": false,
+            "is_third_party": false,
+            "prominent_disclosure_status": "EXEMPT",
+            "purpose": "Local functionality only",
+            "linked_to_user": false,
+            "worker_file": "worker_data_safety_part_7.json",
+            "finding_id": "18"
+        },
+        {
+            "psl_constant": "OTHER_APP_PERFORMANCE",
+            "policy_id": "data_safety_section",
+            "issue_summary": "Data Safety Compliant (Local-Only)",
+            "severity": "SUGGESTION",
+            "files_involved": [
+                "/root/projetos/meu-app/biz-flowcloud/android/app/src/main/assets/public/assets/index-BMHFFNQZ.js",
+                "/root/projetos/meu-app/biz-flowcloud/dist/assets/index-PqeuXPtB.js"
+            ],
+            "evidence": "Forward trace of telemetry (OTHER_APP_PERFORMANCE) pattern in both specified JS files found no telemetry, analytics, or app performance monitoring code. No analytics SDKs (Firebase, Sentry, Amplitude, Mixpanel, DataDog, etc.) present in package.json dependencies, Android build files, or Capacitor plugins. google-services.json not found \u2014 Google Services plugin not activated. Source code search confirms zero telemetry/performance collection or transmission code.",
+            "recommendation": "No action required. The codebase does not collect or transmit OTHER_APP_PERFORMANCE data. Verify this aligns with Play Store Data Safety declarations under 'App performance' category.",
+            "is_transferred": false,
+            "user_initiated": false,
+            "is_third_party": false,
+            "prominent_disclosure_status": "EXEMPT",
+            "purpose": "Local functionality only",
+            "linked_to_user": false,
+            "worker_file": "worker_data_safety_part_8.json",
+            "finding_id": "19"
+        },
+        {
+            "policy_id": "photo_video_access_policy",
+            "issue_summary": "App declares READ_EXTERNAL_STORAGE (maxSdkVersion=32) despite all image handling being user-initiated single-file selection via <input type=\"file\" accept=\"image/*\"> \u2014 logo upload, stamp upload, and receipt scanning. TargetSdk=35 makes this a no-op on API 33+, but the broad storage permission is still in the manifest and is unnecessary since the WebView file chooser does not require it.",
+            "severity": "IMPORTANT",
+            "files_involved": [
+                "/root/projetos/meu-app/biz-flowcloud/android/app/src/main/AndroidManifest.xml",
+                "/root/projetos/meu-app/biz-flowcloud/src/components/SettingsModal.tsx",
+                "/root/projetos/meu-app/biz-flowcloud/src/components/FinanceManager.tsx"
+            ],
+            "evidence": "Manifest: READ_EXTERNAL_STORAGE at line 57 with maxSdkVersion=32. WRITE_EXTERNAL_STORAGE at line 55 with maxSdkVersion=28. requestLegacyExternalStorage=true at line 11. Photo usage: SettingsModal.tsx:64 (logo upload, accept=\"image/*\"), SettingsModal.tsx:134 (stamp upload, accept=\"image/*\"), FinanceManager.tsx:267 (receipt scan, accept=\"image/*\" capture=\"environment\"). App is Biz-flow.cloud (business finance app), NOT a dedicated media manager.",
+            "recommendation": "Remove READ_EXTERNAL_STORAGE and WRITE_EXTERNAL_STORAGE permissions from AndroidManifest.xml \u2014 the app's image selection flows use <input type=\"file\"> which invokes the system file picker without requiring broad storage permissions on any modern Android version. Remove requestLegacyExternalStorage=\"true\". No functional impact since all image operations are user-initiated and single-file.",
+            "worker_file": "worker_permissions_and_apis.json",
+            "finding_id": "20"
+        },
+        {
+            "policy_id": "files_and_docs_policy",
+            "issue_summary": "App declares READ_EXTERNAL_STORAGE (maxSdkVersion=32), WRITE_EXTERNAL_STORAGE (maxSdkVersion=28), and uses requestLegacyExternalStorage=true, but all file operations use Capacitor Filesystem plugin with Directory.Documents (scoped storage on API 30+). No raw file path access found. The permissions are legacy artifacts from pre-scoped-storage era.",
+            "severity": "IMPORTANT",
+            "files_involved": [
+                "/root/projetos/meu-app/biz-flowcloud/android/app/src/main/AndroidManifest.xml",
+                "/root/projetos/meu-app/biz-flowcloud/src/services/nativeFileService.ts",
+                "/root/projetos/meu-app/biz-flowcloud/src/app/main.tsx",
+                "/root/projetos/meu-app/biz-flowcloud/src/components/DocumentShareModal.tsx",
+                "/root/projetos/meu-app/biz-flowcloud/src/app/hooks/useDocumentActions.ts"
+            ],
+            "evidence": "Manifest: requestLegacyExternalStorage=true at line 11, WRITE_EXTERNAL_STORAGE at line 55 (maxSdkVersion=28), READ_EXTERNAL_STORAGE at line 57 (maxSdkVersion=32). main.tsx:31 creates 'Biz-flow/' folder via Capacitor Filesystem mkdir(Directory.Documents). nativeFileService.ts writes/reads PDFs via Capacitor Filesystem to Directory.Documents/Biz-flow/. DocumentShareModal.tsx and useDocumentActions.ts similarly use Capacitor Filesystem scoped API. No direct Environment.getExternalStorageDirectory() usage anywhere in the codebase. localStorage reference in assets is browser-level web storage, unrelated to Android file permissions.",
+            "recommendation": "Remove READ_EXTERNAL_STORAGE and WRITE_EXTERNAL_STORAGE from AndroidManifest.xml. Remove android:requestLegacyStorage=\"true\" (only applies to API 29, irrelevant on targetSdk=35). The Capacitor Filesystem plugin already uses scoped storage via the SAF on API 30+ and works correctly without these permissions.",
+            "worker_file": "worker_permissions_and_apis.json",
+            "finding_id": "21"
+        },
+        {
+            "policy_id": "login_credentials",
+            "issue_summary": "Login screen detected. The app implements a full authentication flow with email/password sign-in, sign-up, password reset, and Google OAuth, gating features behind a user account.",
+            "severity": "IMPORTANT",
+            "files_involved": [
+                "/root/projetos/meu-app/biz-flowcloud/src/features/auth/AuthPage.tsx",
+                "/root/projetos/meu-app/biz-flowcloud/src/features/auth/ConnectAccountModal.tsx",
+                "/root/projetos/meu-app/biz-flowcloud/src/features/auth/AuthContext.tsx",
+                "/root/projetos/meu-app/biz-flowcloud/src/features/auth/AuthService.ts"
+            ],
+            "evidence": "AuthPage.tsx (lines 60-207) renders a full login/signup/reset UI with email/password form and Google Sign-In button. ConnectAccountModal.tsx (lines 76-182) provides an in-app modal for account connection with Supabase. AuthContext.tsx (lines 40-145) manages auth state and exposes signIn, signUp, signOut, resetPassword, signInWithGoogle. AuthService.ts (lines 13-62) implements actual Supabase Auth API calls (signInWithPassword, signUp, signOut, signInWithOAuth). Users can register and authenticate via email/password or Google.",
+            "recommendation": "Administrative Console Requirements: Because your app implements a login flow, you MUST complete two manual setup steps in the Play Console dashboard: (1) Submit active, non-expiring test credentials so Google Play reviewers can access gated features. (2) Submit a public-facing web link for account deletion to satisfy Google Play's data deletion policies.",
+            "worker_file": "worker_user_account.json",
+            "finding_id": "22"
+        },
+        {
+            "policy_id": "account_deletion",
+            "issue_summary": "App handles user accounts via Supabase Auth but NO in-app account deletion mechanism exists. The signOut() method only clears the local session without deleting the remote user record.",
+            "severity": "IMPORTANT",
+            "files_involved": [
+                "/root/projetos/meu-app/biz-flowcloud/src/features/auth/AuthContext.tsx",
+                "/root/projetos/meu-app/biz-flowcloud/src/features/auth/AuthService.ts"
+            ],
+            "evidence": "AuthContext.tsx lines 99-104: signOut() only calls supabase.auth.signOut() and clears local state (setState({ user: null })) \u2014 it does NOT perform a remote account deletion or send a delete/purge API call. AuthService.ts lines 38-42: signOut() calls supabase.auth.signOut() and logs warnings but never triggers account deletion. No file in the codebase contains any account deletion code (searched for 'deleteAccount', 'delete_account', 'apagar.conta', 'removeAccount', 'deletar', 'remove account'). No Profile or Settings pages exist where a deletion option could be placed.",
+            "recommendation": "Implement in-app deletion: Create a highly discoverable path (e.g., under User Profile / Account Settings) to let users initiate account deletion directly in the app. The deletion must call a Supabase Admin API or Edge Function to permanently remove the user's remote database records, not merely sign them out.",
+            "worker_file": "worker_user_account.json",
+            "finding_id": "23"
+        }
+    ]
+}

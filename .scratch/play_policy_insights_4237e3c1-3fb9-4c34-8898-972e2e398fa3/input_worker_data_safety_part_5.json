@@ -1,0 +1,136 @@
+{
+    "APP_DIR": "/root/projetos/meu-app/biz-flowcloud",
+    "APP_NAME": "app_name",
+    "GOAL_NAME": "data_safety_part_5",
+    "PACKAGE_NAME": "biz-flow.cloud",
+    "REPO_ROOT": "/root/projetos/meu-app/skills/play/play-policy-insights",
+    "TARGET_SDK": null,
+    "TEMP_DIR": "/root/projetos/meu-app/.scratch/play_policy_insights_4237e3c1-3fb9-4c34-8898-972e2e398fa3",
+    "data_sources": {
+        "CRASH_LOGS": {
+            "description": "Crash log data from your app. For example, the number of times your app has crashed, stack traces, or other information directly related to a crash.",
+            "findings": [
+                "android/app/src/main/assets/public/assets/vendor-react-B-V5UcMf.js (Pattern: uncaughtException)",
+                "dist/assets/index-PqeuXPtB.js (Pattern: uncaughtException)"
+            ]
+        },
+        "PERFORMANCE_DIAGNOSTICS": {
+            "description": "Information about the performance of your app. For example battery life, loading time, latency, framerate, or any technical diagnostics.",
+            "findings": [
+                "android/app/src/main/assets/public/assets/index-BMHFFNQZ.js (Pattern: Debug)",
+                "android/app/src/main/assets/public/assets/vendor-react-B-V5UcMf.js (Pattern: Debug)",
+                "dist/assets/index-PqeuXPtB.js (Pattern: Debug)"
+            ]
+        },
+        "WEB_BROWSING_HISTORY": {
+            "description": "Information about the websites a user has visited.",
+            "findings": [
+                "android/app/src/main/assets/public/assets/index-BMHFFNQZ.js (Pattern: loadUrl)"
+            ]
+        }
+    },
+    "disclosure": [
+        "android/app/src/main/assets/public/assets/index-BMHFFNQZ.js (Pattern: Accept)",
+        "android/app/src/main/assets/public/assets/index.es-ChRz2rLR.js (Pattern: share)",
+        "android/app/src/main/assets/public/assets/vendor-pdf-J-Nz47Vc.js (Pattern: collect)",
+        "android/app/src/main/assets/public/assets/vendor-react-B-V5UcMf.js (Pattern: collect)",
+        "android/app/src/main/assets/public/assets/web-C0ECHS3C.js (Pattern: share)",
+        "dist/assets/index-PqeuXPtB.js (Pattern: Accept)",
+        "dist/assets/index.es-BQdJycl1.js (Pattern: share)",
+        "dist/assets/vendor-pdf-bBKjgtr1.js (Pattern: collect)",
+        "dist/assets/vendor-react-B-V5UcMf.js (Pattern: collect)",
+        "dist/assets/web-C0ECHS3C.js (Pattern: share)",
+        "package.json (Pattern: share)",
+        "src/app/hooks/useDocumentActions.ts (Pattern: share)",
+        "src/app/views/AppEditorView.tsx (Pattern: share)",
+        "src/components/DocumentShareModal.tsx (Pattern: share)",
+        "src/components/DocumentShareModalView.tsx (Pattern: share)",
+        "src/components/LegalModal.tsx (Pattern: transmit)",
+        "src/services/nativeShareService.ts (Pattern: share)"
+    ],
+    "found_urls": [],
+    "network_transmission": {
+        "-": [
+            "android/app/src/main/assets/public/assets/FinanceManager-DKKYas9k.js (Pattern: fetch)",
+            "android/app/src/main/assets/public/assets/index-BMHFFNQZ.js (Pattern: fetch)",
+            "android/app/src/main/assets/public/assets/index-BX-3hnY9.js (Pattern: fetch)",
+            "android/app/src/main/assets/public/assets/index.es-ChRz2rLR.js (Pattern: fetch)",
+            "android/app/src/main/assets/public/assets/vendor-pdf-J-Nz47Vc.js (Pattern: fetch)",
+            "android/app/src/main/assets/public/assets/vendor-react-B-V5UcMf.js (Pattern: fetch)",
+            "android/app/src/main/assets/public/assets/web-B4eKPTLm.js (Pattern: fetch)",
+            "android/app/src/main/assets/public/service-worker.js (Pattern: fetch)",
+            "dist/assets/FinanceManager-D_nl3BTD.js (Pattern: fetch)",
+            "dist/assets/index-BX-3hnY9.js (Pattern: fetch)",
+            "dist/assets/index-PqeuXPtB.js (Pattern: fetch)",
+            "dist/assets/index.es-BQdJycl1.js (Pattern: fetch)",
+            "dist/assets/vendor-pdf-bBKjgtr1.js (Pattern: fetch)",
+            "dist/assets/vendor-react-B-V5UcMf.js (Pattern: fetch)",
+            "dist/assets/web-vqrfvDN-.js (Pattern: fetch)",
+            "dist/service-worker.js (Pattern: fetch)",
+            "public/service-worker.js (Pattern: fetch)",
+            "src/components/FinanceManager.tsx (Pattern: fetch)"
+        ]
+    },
+    "requested_permissions": {
+        "AUDIO": [
+            "android.permission.READ_EXTERNAL_STORAGE",
+            "android.permission.WRITE_EXTERNAL_STORAGE"
+        ],
+        "FILES_AND_DOCS": [
+            "android.permission.READ_EXTERNAL_STORAGE",
+            "android.permission.WRITE_EXTERNAL_STORAGE"
+        ],
+        "LOCATION": [
+            "android.permission.ACCESS_FINE_LOCATION",
+            "android.permission.ACCESS_COARSE_LOCATION"
+        ],
+        "MEDIA": [
+            "android.permission.READ_EXTERNAL_STORAGE",
+            "android.permission.WRITE_EXTERNAL_STORAGE"
+        ],
+        "MUSIC": [
+            "android.permission.READ_EXTERNAL_STORAGE",
+            "android.permission.WRITE_EXTERNAL_STORAGE"
+        ],
+        "OTHER_AUDIO": [
+            "android.permission.READ_EXTERNAL_STORAGE",
+            "android.permission.WRITE_EXTERNAL_STORAGE"
+        ],
+        "PHOTOS": [
+            "android.permission.READ_EXTERNAL_STORAGE",
+            "android.permission.WRITE_EXTERNAL_STORAGE",
+            "android.permission.CAMERA"
+        ],
+        "VIDEOS": [
+            "android.permission.READ_EXTERNAL_STORAGE",
+            "android.permission.WRITE_EXTERNAL_STORAGE",
+            "android.permission.CAMERA"
+        ]
+    },
+    "semantic_files": {
+        "CONFIG": [
+            "capacitor.config.ts",
+            "postcss.config.js",
+            "tailwind.config.js",
+            "vite.config.ts",
+            "config.xml",
+            "config.js"
+        ],
+        "LEGAL": [
+            "LegalModal.tsx"
+        ],
+        "OTHER_APP_PERFORMANCE": [
+            "syncService-DcwUexvy.js",
+            "syncService-BbHGmhLi.js",
+            "syncService.ts"
+        ],
+        "USER_ACCOUNT": [
+            "oauth2.js",
+            "oauth2.js",
+            "AuthContext.tsx",
+            "AuthPage.tsx",
+            "AuthService.ts",
+            "ConnectAccountModal.tsx"
+        ]
+    }
+}

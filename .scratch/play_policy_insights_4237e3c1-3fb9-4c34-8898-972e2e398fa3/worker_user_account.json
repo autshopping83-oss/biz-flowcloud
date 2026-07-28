@@ -1,0 +1,29 @@
+{
+  "domain": "User Account and Identity",
+  "findings": [
+    {
+      "policy_id": "login_credentials",
+      "issue_summary": "Login screen detected. The app implements a full authentication flow with email/password sign-in, sign-up, password reset, and Google OAuth, gating features behind a user account.",
+      "severity": "IMPORTANT",
+      "files_involved": [
+        "/root/projetos/meu-app/biz-flowcloud/src/features/auth/AuthPage.tsx",
+        "/root/projetos/meu-app/biz-flowcloud/src/features/auth/ConnectAccountModal.tsx",
+        "/root/projetos/meu-app/biz-flowcloud/src/features/auth/AuthContext.tsx",
+        "/root/projetos/meu-app/biz-flowcloud/src/features/auth/AuthService.ts"
+      ],
+      "evidence": "AuthPage.tsx (lines 60-207) renders a full login/signup/reset UI with email/password form and Google Sign-In button. ConnectAccountModal.tsx (lines 76-182) provides an in-app modal for account connection with Supabase. AuthContext.tsx (lines 40-145) manages auth state and exposes signIn, signUp, signOut, resetPassword, signInWithGoogle. AuthService.ts (lines 13-62) implements actual Supabase Auth API calls (signInWithPassword, signUp, signOut, signInWithOAuth). Users can register and authenticate via email/password or Google.",
+      "recommendation": "Administrative Console Requirements: Because your app implements a login flow, you MUST complete two manual setup steps in the Play Console dashboard: (1) Submit active, non-expiring test credentials so Google Play reviewers can access gated features. (2) Submit a public-facing web link for account deletion to satisfy Google Play's data deletion policies."
+    },
+    {
+      "policy_id": "account_deletion",
+      "issue_summary": "App handles user accounts via Supabase Auth but NO in-app account deletion mechanism exists. The signOut() method only clears the local session without deleting the remote user record.",
+      "severity": "IMPORTANT",
+      "files_involved": [
+        "/root/projetos/meu-app/biz-flowcloud/src/features/auth/AuthContext.tsx",
+        "/root/projetos/meu-app/biz-flowcloud/src/features/auth/AuthService.ts"
+      ],
+      "evidence": "AuthContext.tsx lines 99-104: signOut() only calls supabase.auth.signOut() and clears local state (setState({ user: null })) — it does NOT perform a remote account deletion or send a delete/purge API call. AuthService.ts lines 38-42: signOut() calls supabase.auth.signOut() and logs warnings but never triggers account deletion. No file in the codebase contains any account deletion code (searched for 'deleteAccount', 'delete_account', 'apagar.conta', 'removeAccount', 'deletar', 'remove account'). No Profile or Settings pages exist where a deletion option could be placed.",
+      "recommendation": "Implement in-app deletion: Create a highly discoverable path (e.g., under User Profile / Account Settings) to let users initiate account deletion directly in the app. The deletion must call a Supabase Admin API or Edge Function to permanently remove the user's remote database records, not merely sign them out."
+    }
+  ]
+}

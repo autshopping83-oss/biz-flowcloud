@@ -1,0 +1,43 @@
+{
+  "domain": "Data Safety and Privacy",
+  "findings": [
+    {
+      "psl_constant": "MUSIC",
+      "policy_id": "data_safety_section",
+      "issue_summary": "Data Safety Compliant (Local-Only)",
+      "severity": "SUGGESTION",
+      "files_involved": [
+        "/root/projetos/meu-app/biz-flowcloud/android/app/src/main/assets/public/assets/Dashboard-DF4sbnRU.js",
+        "/root/projetos/meu-app/biz-flowcloud/android/app/src/main/assets/public/assets/FinanceManager-DKKYas9k.js",
+        "/root/projetos/meu-app/biz-flowcloud/android/app/src/main/assets/public/assets/HistoryPage-CaHIlZ_J.js"
+      ],
+      "evidence": "No music data transmission detected. The 'track' pattern in the bundled assets matches CSS class name 'tracking-tight' (a Tailwind CSS letter-spacing utility) and import aliases, not actual music file access or transfer. False positive confirmed per semantic grounding analysis.",
+      "recommendation": "No action required. The identified 'track' patterns are false positives unrelated to music data collection or transmission.",
+      "is_transferred": false,
+      "user_initiated": false,
+      "is_third_party": false,
+      "prominent_disclosure_status": "EXEMPT",
+      "purpose": "Local functionality only",
+      "linked_to_user": false
+    },
+    {
+      "psl_constant": "USER_ACCOUNT",
+      "policy_id": "data_safety_section",
+      "issue_summary": "User-Initiated Collection",
+      "severity": "IMPORTANT",
+      "files_involved": [
+        "/root/projetos/meu-app/biz-flowcloud/src/features/auth/AuthService.ts",
+        "/root/projetos/meu-app/biz-flowcloud/src/services/supabase.ts",
+        "/root/projetos/meu-app/biz-flowcloud/android/app/src/main/assets/public/assets/index-BMHFFNQZ.js"
+      ],
+      "evidence": "User account credentials (email, password) transmitted to Supabase servers for authentication. AuthService.signIn() at AuthService.ts:16 calls supabase.auth.signInWithPassword({email, password}). AuthService.signUp() at AuthService.ts:28 calls supabase.auth.signUp({email, password}). Supabase client initialized at supabase.ts:12 with URL and anon key from env vars. The bundled index-BMHFFNQZ.js contains bundled Supabase auth-js library (signInWithIdToken, _exchangeCodeForSession, signInWithPassword). Transmission is user-initiated (explicit login/signup button click) to first-party service provider (Supabase).",
+      "recommendation": "User account data is transmitted to Supabase (first-party service provider) for authentication purposes. This must be declared in the Play Store Data Safety form under 'App functionality' with data type 'Email address' and 'Password'. No prominent in-app disclosure is required as the transmission is user-initiated (Case 3 per evaluation matrix).",
+      "is_transferred": true,
+      "user_initiated": true,
+      "is_third_party": false,
+      "prominent_disclosure_status": "EXEMPT",
+      "purpose": "App functionality (Authentication)",
+      "linked_to_user": true
+    }
+  ]
+}

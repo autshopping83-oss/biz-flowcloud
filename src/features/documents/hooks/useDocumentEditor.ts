@@ -1,11 +1,10 @@
 /**
  * useDocumentEditor - Hook para gerenciar o estado do editor de documentos
  * 
- * Extraído do App.tsx para respeitar SRP e limite de 30 linhas por função.
- * Gerencia: formData, newItem, mobileTab, modais, histórico.
+ * Gerencia: formData, newItem, mobileTab, modais, histórico, totais.
  */
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { ReceiptData, CompanySettings, DocumentType, LineItem } from '../../../types';
 import { generateNextReceiptNumber, saveReceipt, deleteReceipt } from '../../../services/storageService';
 import { useSignatureCanvas } from '../../../app/hooks/useSignatureCanvas';
@@ -42,9 +41,20 @@ export function useDocumentEditor({
   const ghostReceiptRef = useRef<HTMLDivElement>(null);
   const thermalReceiptRef = useRef<HTMLDivElement>(null);
 
-  const { canvasRef, clearCanvas, getCanvasDataUrl } = useSignatureCanvas(showSignatureModal);
+  const signatureCanvas = useSignatureCanvas(showSignatureModal);
 
-  const { isGeneratingPdf, isSharing, isPrinting, localDirHandle, requestFolderPermission, handleGeneratePDF, handleShareWhatsApp, handlePrintThermal, generatePDFBlob } = useDocumentActions({
+  // Recalculate totals when items, taxRate, or discount change
+  useEffect(() => {
+    const subtotal = formData.items.reduce((acc, item) => acc + (item.total || 0), 0);
+    const taxAmount = subtotal * ((formData.taxRate || 0) / 100);
+    const total = subtotal + taxAmount - (formData.discount || 0);
+    
+    if (formData.subtotal !== subtotal || formData.taxAmount !== taxAmount || formData.total !== total) {
+      setFormData(prev => ({ ...prev, subtotal, taxAmount, total }));
+    }
+  }, [formData.items, formData.taxRate, formData.discount]);
+
+  const { isGeneratingPdf, isSharing, isPrinting, localDirHandle, requestFolderPermission, handleGeneratePDF, handleShareWhatsApp, handlePrintThermal } = useDocumentActions({
     formData,
     receiptRef,
     ghostReceiptRef,
@@ -58,7 +68,7 @@ export function useDocumentEditor({
     },
   });
 
-  const initNewDocument = (type: DocumentType) => {
+  const initNewDocument = useCallback((type: DocumentType) => {
     const today = new Date().toISOString().split('T')[0] ?? '';
     setFormData({
       ...InitialReceipt,
@@ -77,9 +87,9 @@ export function useDocumentEditor({
     });
     setMobileTab('editor');
     setCurrentView('app');
-  };
+  }, [history, companySettings, setCurrentView]);
 
-  const handleDuplicateDocument = (doc: ReceiptData) => {
+  const handleDuplicateDocument = useCallback((doc: ReceiptData) => {
     const newDoc = { ...doc };
     setFormData({
       ...newDoc,
@@ -89,66 +99,47 @@ export function useDocumentEditor({
     });
     setCurrentView('app');
     notify('Documento duplicado com novo número e data.', 'info');
-  };
+  }, [history, setCurrentView, notify]);
 
-  const handleFormDataChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleFormDataChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => {
-      const updated = { ...prev, [name]: value };
-      if (name === 'taxRate' || name === 'discount') {
-        const taxRate = name === 'taxRate' ? Number(value) : prev.taxRate;
-        const discount = name === 'discount' ? Number(value) : prev.discount;
-        return { ...updated, ...recalcular(prev.items, taxRate, discount) };
-      }
-      return updated;
-    });
-  };
+    setFormData(p => ({ ...p, [name]: value }));
+  }, []);
 
-  const handleNewItemChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleNewItemChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setNewItem(p => ({ ...p, [name]: value }));
-  };
+  }, []);
 
-  const recalcular = (items: LineItem[], taxRate: number, discount: number) => {
-    const subtotal = items.reduce((s, i) => s + i.quantity * i.unitPrice, 0);
-    const taxAmount = taxRate > 0 ? subtotal * (taxRate / 100) : 0;
-    const total = subtotal + taxAmount - discount;
-    return { subtotal, taxAmount, total };
-  };
-
-  const handleAddItem = () => {
+  const handleAddItem = useCallback(() => {
     if (!newItem.description) return;
     const q = Number(newItem.quantity) || 1;
     const p = Number(newItem.unitPrice) || 0;
-    setFormData(prev => {
-      const items = [...prev.items, { id: crypto.randomUUID(), description: newItem.description!, quantity: q, unitPrice: p, total: q * p }];
-      return { ...prev, items, ...recalcular(items, prev.taxRate, prev.discount) };
-    });
+    setFormData(prev => ({
+      ...prev,
+      items: [...prev.items, { id: crypto.randomUUID(), description: newItem.description!, quantity: q, unitPrice: p, total: q * p }],
+    }));
     setNewItem({ description: '', quantity: 1, unitPrice: 0 });
-  };
+  }, [newItem]);
 
-  const handleRemoveItem = (id: string) => {
-    setFormData(prev => {
-      const items = prev.items.filter(i => i.id !== id);
-      return { ...prev, items, ...recalcular(items, prev.taxRate, prev.discount) };
-    });
-  };
+  const handleRemoveItem = useCallback((id: string) => {
+    setFormData(p => ({ ...p, items: p.items.filter(i => i.id !== id) }));
+  }, []);
 
-  const handleEnhanceDescription = async () => {
-    // AI enhancement disabled - no external API
+  const handleEnhanceDescription = useCallback(() => {
     notify('Funcionalidade de IA não disponível.', 'info');
-  };
+  }, [notify]);
 
-  const handleClearClient = () => {
+  const handleClearClient = useCallback(() => {
     setFormData(p => ({ ...p, clientName: '', clientContact: '', clientLocation: '', clientNuit: '' }));
-  };
+  }, []);
 
-  const handleThemeChange = (theme: 'color' | 'bw') => {
+  const handleThemeChange = useCallback((theme: 'color' | 'bw') => {
     setFormData(p => ({ ...p, documentTheme: theme }));
-  };
+  }, []);
 
-  const saveSignature = () => {
-    const canvas = canvasRef.current;
+  const saveSignature = useCallback(() => {
+    const canvas = signatureCanvas.canvasRef.current;
     if (!canvas) return;
     const blank = document.createElement('canvas');
     blank.width = canvas.width;
@@ -161,27 +152,48 @@ export function useDocumentEditor({
     setFormData(p => ({ ...p, signatureData: dataUrl }));
     setShowSignatureModal(false);
     notify('Assinatura guardada!', 'success');
-  };
+  }, [signatureCanvas.canvasRef, notify]);
 
-  const clearSignature = () => {
-    clearCanvas(canvasRef.current);
-  };
+  const clearSignature = useCallback(() => {
+    signatureCanvas.clearCanvas(signatureCanvas.canvasRef.current);
+  }, [signatureCanvas]);
 
-  const handleDeleteDocument = async (id: string) => {
+  const handleDeleteDocument = useCallback(async (id: string) => {
     const updated = await deleteReceipt(id, 'local');
     setHistory(updated);
-  };
+  }, [setHistory]);
+
+  // Settings signature handlers
+  const saveSettingsSignature = useCallback(() => {
+    const canvas = signatureCanvas.settingsSignatureCanvasRef.current;
+    if (!canvas) return;
+    const dataUrl = signatureCanvas.getCanvasDataUrl(canvas);
+    if (dataUrl) {
+      setFormData(p => ({ ...p, signatureData: dataUrl }));
+      notify('Assinatura padrão guardada!', 'success');
+    }
+  }, [signatureCanvas, notify]);
+
+  const clearSettingsSignature = useCallback(() => {
+    signatureCanvas.clearCanvas(signatureCanvas.settingsSignatureCanvasRef.current);
+  }, [signatureCanvas]);
 
   return {
     formData, setFormData, newItem, isEnhancing, mobileTab,
     showSignatureModal, showShareModal,
-    receiptRef, ghostReceiptRef, thermalReceiptRef, canvasRef,
+    receiptRef, ghostReceiptRef, thermalReceiptRef, 
+    canvasRef: signatureCanvas.canvasRef,
+    settingsSignatureCanvasRef: signatureCanvas.settingsSignatureCanvasRef,
     isGeneratingPdf, isSharing, isPrinting, localDirHandle,
-    requestFolderPermission, handleGeneratePDF, handleShareWhatsApp, handlePrintThermal, generatePDFBlob,
+    requestFolderPermission, handleGeneratePDF, handleShareWhatsApp, handlePrintThermal,
     setMobileTab, setShowSignatureModal, setShowShareModal,
     initNewDocument, handleDuplicateDocument,
     handleFormDataChange, handleNewItemChange, handleAddItem, handleRemoveItem,
     handleEnhanceDescription, handleClearClient, handleThemeChange,
     saveSignature, clearSignature, handleDeleteDocument,
+    saveSettingsSignature, clearSettingsSignature,
+    handleSettingsSignatureStartDrawing: signatureCanvas.handleSettingsSignatureStartDrawing,
+    handleSettingsSignatureDraw: signatureCanvas.handleSettingsSignatureDraw,
+    handleSettingsSignatureStopDrawing: signatureCanvas.handleSettingsSignatureStopDrawing,
   };
 }

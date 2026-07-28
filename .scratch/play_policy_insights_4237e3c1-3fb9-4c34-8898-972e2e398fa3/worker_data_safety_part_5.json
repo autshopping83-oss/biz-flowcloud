@@ -1,0 +1,61 @@
+{
+  "domain": "Data Safety and Privacy",
+  "findings": [
+    {
+      "psl_constant": "CRASH_LOGS",
+      "policy_id": "data_safety_section",
+      "issue_summary": "Data Safety Compliant (Local-Only)",
+      "severity": "SUGGESTION",
+      "files_involved": [
+        "biz-flowcloud/android/app/src/main/assets/public/assets/vendor-react-B-V5UcMf.js",
+        "biz-flowcloud/dist/assets/index-PqeuXPtB.js",
+        "biz-flowcloud/src/components/ErrorBoundary.tsx",
+        "biz-flowcloud/src/app/main.tsx"
+      ],
+      "evidence": "The 'uncaughtException' pattern matches minified React runtime error handling code (Error class with .stack property). The app's only error handling is an ErrorBoundary.tsx and an unhandledrejection listener in main.tsx, both limited to local console.error logging. No third-party crash reporting SDK (Crashlytics, Sentry, etc.) is integrated — confirmed by package.json dependency review.",
+      "recommendation": "No action required. Crash log data remains on-device and is not transmitted off-device. To maintain compliance, ensure no crash reporting SDK is added without proper disclosure.",
+      "is_transferred": false,
+      "user_initiated": false,
+      "is_third_party": false,
+      "prominent_disclosure_status": "EXEMPT",
+      "purpose": "Local error handling only",
+      "linked_to_user": false
+    },
+    {
+      "psl_constant": "PERFORMANCE_DIAGNOSTICS",
+      "policy_id": "data_safety_section",
+      "issue_summary": "Data Safety Compliant (Local-Only)",
+      "severity": "SUGGESTION",
+      "files_involved": [
+        "biz-flowcloud/android/app/src/main/assets/public/assets/index-BMHFFNQZ.js",
+        "biz-flowcloud/android/app/src/main/assets/public/assets/vendor-react-B-V5UcMf.js",
+        "biz-flowcloud/dist/assets/index-PqeuXPtB.js"
+      ],
+      "evidence": "The 'Debug' pattern matches minified React reconciler/scheduler variable names (e.g., `Na=r.unstable_setDisableYieldValue`) in the vendor bundle. No performance monitoring, frame rate tracking, latency measurement, or battery diagnostics code exists in the application source code. The app does not collect or transmit performance diagnostics data.",
+      "recommendation": "No action required. Performance diagnostics are not collected or transmitted. If future performance monitoring is added, ensure it is declared in the Play Store Data Safety form.",
+      "is_transferred": false,
+      "user_initiated": false,
+      "is_third_party": false,
+      "prominent_disclosure_status": "EXEMPT",
+      "purpose": "Not collected",
+      "linked_to_user": false
+    },
+    {
+      "psl_constant": "WEB_BROWSING_HISTORY",
+      "policy_id": "data_safety_section",
+      "issue_summary": "Data Safety Compliant (Local-Only)",
+      "severity": "SUGGESTION",
+      "files_involved": [
+        "biz-flowcloud/android/app/src/main/assets/public/assets/index-BMHFFNQZ.js"
+      ],
+      "evidence": "The 'loadUrl' pattern matches the Supabase RealtimeClient class constructor code (WebSocket endpoint URL initialization). This is a standard WebSocket connection to Supabase for real-time features, not web browsing history tracking. The source code (src/) contains no WebView navigation tracking, URL history monitoring, or browsing-related data collection. The app is a single-page Capacitor application with no browsing history functionality.",
+      "recommendation": "No action required. Web browsing history is not collected or transmitted. No declaration needed in the Play Store Data Safety form.",
+      "is_transferred": false,
+      "user_initiated": false,
+      "is_third_party": false,
+      "prominent_disclosure_status": "EXEMPT",
+      "purpose": "Not collected",
+      "linked_to_user": false
+    }
+  ]
+}

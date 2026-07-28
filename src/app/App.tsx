@@ -5,24 +5,18 @@
  * v4: Web PWA pura - sem Supabase, sem Android, sem APIs externas
  */
 
-import React, { useState, useEffect, lazy, Suspense } from 'react';
+import React, { useState, lazy, Suspense } from 'react';
 import { ReceiptData, CompanySettings, SavedClient, SavedProduct } from '../types';
 import { Logo } from '../components/Logo';
 import { V } from '../_cachebuster/version';
 import { useToast } from '../components/ToastContext';
-import { useAuth } from '../features/auth/AuthContext';
-import { AuthGuard } from '../features/auth/AuthGuard';
 import { useAppLifecycle } from './hooks/useAppLifecycle';
 import { useDocumentEditor } from '../features/documents/hooks/useDocumentEditor';
-import { useSignatureCanvas } from './hooks/useSignatureCanvas';
 import { getTranslation, formatMoney } from '../services/translationService';
 import { AppEditorView } from './views/AppEditorView';
 import { SignatureModal } from '../features/documents/components/SignatureModal';
 import { DocumentShareModal } from '../components/DocumentShareModal';
 import { SettingsModal } from '../components/SettingsModal';
-import { ProductsPage } from '../features/products/ProductsPage';
-import { ClientsPage } from '../features/clients/ClientsPage';
-import { ClientHistory } from '../features/clients/ClientHistory';
 
 const Dashboard = lazy(() => import('../components/Dashboard').then(m => ({ default: m.Dashboard })));
 const HistoryPage = lazy(() => import('../components/HistoryPage').then(m => ({ default: m.HistoryPage })));
@@ -48,12 +42,9 @@ const DefaultSettings: CompanySettings = {
   theme: 'light', plan: 'PRO', isAdmin: false,
 };
 
-type AppView = 'loading' | 'home' | 'history' | 'app' | 'products' | 'clients' | 'client-history';
+type AppView = 'loading' | 'home' | 'history' | 'app';
 
 const App: React.FC<{ onReady?: () => void }> = ({ onReady }) => {
-  const { user, signOut } = useAuth();
-  const userId = user?.id ?? 'local';
-
   const [currentView, setCurrentView] = useState<AppView>('loading');
   const [isGuest, setIsGuest] = useState(false);
   const [history, setHistory] = useState<ReceiptData[]>([]);
@@ -63,10 +54,6 @@ const App: React.FC<{ onReady?: () => void }> = ({ onReady }) => {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [installPrompt, setInstallPrompt] = useState<Window['deferredPrompt']>(null);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
-  const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
-  const [syncing, setSyncing] = useState(false);
-  const [gmailConectado, setGmailConectado] = useState(false);
-  const [gmailEmail, setGmailEmail] = useState('');
   
   // Version tracking - force rebuild
   console.debug('BizFlow version:', V);
@@ -76,100 +63,26 @@ const App: React.FC<{ onReady?: () => void }> = ({ onReady }) => {
   const fMoney = (val: number) => formatMoney(val, companySettings.currency, companySettings.language);
 
   useAppLifecycle({
-    userId, currentView, isGuest, setCurrentView: (v: string) => setCurrentView(v as AppView), setIsGuest,
+    currentView, isGuest, setCurrentView: (v: string) => setCurrentView(v as AppView), setIsGuest,
     setHistory, setSavedClients, setSavedProducts, setCompanySettings,
     setIsOnline, setLocalDirHandle: () => {}, onReady,
   });
 
   const editor = useDocumentEditor({
-    userId, isGuest, history, companySettings,
+    isGuest, history, companySettings,
     setHistory, setCurrentView: (v: string) => setCurrentView(v as AppView), notify,
   });
-
-  const settingsSignature = useSignatureCanvas(false);
-  const settingsCanvasRef = settingsSignature.settingsSignatureCanvasRef;
-
-  const handleSettingsSaveSignature = () => {
-    const canvas = settingsCanvasRef.current;
-    if (!canvas) return;
-    const blank = document.createElement('canvas');
-    blank.width = canvas.width;
-    blank.height = canvas.height;
-    if (canvas.toDataURL() === blank.toDataURL()) {
-      notify('A assinatura está vazia.', 'info');
-      return;
-    }
-    const dataUrl = canvas.toDataURL('image/png');
-    setCompanySettings(p => ({ ...p, signature: dataUrl }));
-    notify('Assinatura guardada!', 'success');
-  };
-
-  const handleSettingsClearSignature = () => {
-    settingsSignature.clearCanvas(settingsCanvasRef.current);
-    setCompanySettings(p => ({ ...p, signature: undefined }));
-  };
-
-  const handleViewClientHistory = (clientName: string) => {
-    setSelectedClientId(clientName);
-    setCurrentView('client-history');
-  };
-
-  const handleSync = async () => {
-    if (syncing || userId === 'local') return;
-    setSyncing(true);
-    try {
-      const { syncToSupabase } = await import('../services/syncService');
-      const result = await syncToSupabase(userId);
-      if (result.errors.length > 0) {
-        notify(`Sincronizado com alguns erros: ${result.errors.join(', ')}`, 'error');
-      } else {
-        notify(`Sincronizado! ${result.documents} docs, ${result.clients} clientes, ${result.products} produtos`, 'success');
-      }
-    } catch (e) {
-      notify('Erro ao sincronizar: ' + (e as Error).message, 'error');
-    } finally {
-      setSyncing(false);
-    }
-  };
-
-  const verificarGmail = async () => {
-    if (userId === 'local') return;
-    try {
-      const res = await fetch(`/api/auth/status?userId=${userId}`);
-      const data = await res.json();
-      if (data.conectado) {
-        setGmailConectado(true);
-        setGmailEmail(data.email || '');
-      }
-    } catch {} // Silencioso — servico pode nao estar rodando
-  };
-
-  const handleConectarGmail = async () => {
-    notify('A preparar autenticacao Gmail...', 'info');
-    try {
-      const res = await fetch(`/api/auth/url?userId=${userId}`);
-      const data = await res.json();
-      if (data.sucesso && data.url) {
-        window.location.href = data.url;
-      } else {
-        notify('Erro ao obter URL de autenticacao.', 'error');
-      }
-    } catch {
-      notify('Erro de conexao ao servico.', 'error');
-    }
-  };
-
-  // Verificar Gmail ao montar
-  useEffect(() => { verificarGmail(); }, [userId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const toggleTheme = () => {
     const newTheme = companySettings.theme === 'dark' ? 'light' : 'dark';
     setCompanySettings(p => ({ ...p, theme: newTheme }));
+    // Apply dark class to HTML element
     if (newTheme === 'dark') {
       document.documentElement.classList.add('dark');
     } else {
       document.documentElement.classList.remove('dark');
     }
+    // Save to local storage
     localStorage.setItem('bizflow-theme', newTheme);
   };
 
@@ -178,19 +91,16 @@ const App: React.FC<{ onReady?: () => void }> = ({ onReady }) => {
   };
 
   return (
-    <AuthGuard>
     <Suspense fallback={<PageLoader />}>
       {currentView === 'loading' && <PageLoader />}
       {currentView === 'home' && (
         <Dashboard history={history} companySettings={companySettings}
-          onLogout={async () => { await signOut(); setCurrentView('loading'); }}
+          onLogout={() => { setIsGuest(false); setCurrentView('loading'); }}
           onNewDocument={editor.initNewDocument} onOpenSettings={() => setShowSettingsModal(true)}
           onLoadDocument={(doc) => { editor.setFormData(doc); setCurrentView('app'); editor.setMobileTab('preview'); }}
           onViewHistory={() => setCurrentView('history')} onToggleTheme={toggleTheme}
-          t={t} userId={userId} onDeleteDocument={editor.handleDeleteDocument}
-          onInstallApp={handleInstallApp} showInstallButton={!!installPrompt}
-          onViewProducts={() => setCurrentView('products')} onViewClients={() => setCurrentView('clients')}
-          onSync={handleSync} syncing={syncing} />
+          t={t} userId="local" onDeleteDocument={editor.handleDeleteDocument}
+          onInstallApp={handleInstallApp} showInstallButton={!!installPrompt} />
       )}
       {currentView === 'history' && (
         <HistoryPage history={history} onBack={() => setCurrentView('home')}
@@ -213,21 +123,7 @@ const App: React.FC<{ onReady?: () => void }> = ({ onReady }) => {
           onAddItem={editor.handleAddItem} onRemoveItem={editor.handleRemoveItem}
           onEnhanceDescription={editor.handleEnhanceDescription} onInitNew={editor.initNewDocument}
           onSign={() => editor.setShowSignatureModal(true)} onClearClient={editor.handleClearClient}
-          onThemeChange={editor.handleThemeChange} userId={userId}
-          onViewClientHistory={handleViewClientHistory}
-          onUpdateProducts={setSavedProducts} />
-      )}
-      {currentView === 'products' && (
-        <ProductsPage userId={userId} onBack={() => setCurrentView('home')} />
-      )}
-      {currentView === 'clients' && (
-        <ClientsPage userId={userId} savedClients={savedClients} onBack={() => setCurrentView('home')}
-          onUpdateClients={setSavedClients} onViewHistory={handleViewClientHistory} />
-      )}
-      {currentView === 'client-history' && selectedClientId && (
-        <ClientHistory clientName={selectedClientId} history={history}
-          onBack={() => setCurrentView('clients')}
-          onLoadDocument={(doc) => { editor.setFormData(doc); setCurrentView('app'); }} />
+          onThemeChange={editor.handleThemeChange} userId="local" />
       )}
       {showSettingsModal && (
         <SettingsModal companySettings={companySettings} onClose={() => setShowSettingsModal(false)}
@@ -235,28 +131,22 @@ const App: React.FC<{ onReady?: () => void }> = ({ onReady }) => {
           onLogoChange={(e) => { const f = e.target.files?.[0]; if (!f) return; const r = new FileReader(); r.onloadend = () => setCompanySettings(p => ({ ...p, logo: r.result as string })); r.readAsDataURL(f); }}
           onStampUpload={(e) => { const f = e.target.files?.[0]; if (!f) return; const r = new FileReader(); r.onloadend = () => setCompanySettings(p => ({ ...p, customStamp: r.result as string })); r.readAsDataURL(f); }}
           onRequestFolderPermission={async () => { await editor.requestFolderPermission(); }}
-          onSaveSettings={async () => { const { saveCompanySettings } = await import('../services/storageService'); await saveCompanySettings(companySettings, userId); notify('Definições guardadas!', 'success'); setShowSettingsModal(false); }}
+          onSaveSettings={async () => { const { saveCompanySettings } = await import('../services/storageService'); await saveCompanySettings(companySettings, 'local'); notify('Definições guardadas!', 'success'); setShowSettingsModal(false); }}
           isSavingSettings={false} localDirHandle={editor.localDirHandle}
-          onSaveSignature={handleSettingsSaveSignature} onClearSignature={handleSettingsClearSignature}
-          settingsSignatureCanvasRef={settingsCanvasRef as React.RefObject<HTMLCanvasElement | null>}
-          handleSettingsSignatureStartDrawing={settingsSignature.handleSettingsSignatureStartDrawing as unknown as (e: MouseEvent | TouchEvent) => void}
-          handleSettingsSignatureDraw={settingsSignature.handleSettingsSignatureDraw as unknown as (e: MouseEvent | TouchEvent) => void}
-          handleSettingsSignatureStopDrawing={settingsSignature.handleSettingsSignatureStopDrawing}
-          gmailConectado={gmailConectado} gmailEmail={gmailEmail} onConectarGmail={handleConectarGmail} />
+          onSaveSignature={editor.saveSettingsSignature} onClearSignature={editor.clearSettingsSignature} settingsSignatureCanvasRef={editor.settingsSignatureCanvasRef}
+          handleSettingsSignatureStartDrawing={editor.handleSettingsSignatureStartDrawing} handleSettingsSignatureDraw={editor.handleSettingsSignatureDraw} handleSettingsSignatureStopDrawing={editor.handleSettingsSignatureStopDrawing} />
       )}
       {editor.showShareModal && (
-        <DocumentShareModal formData={editor.formData} companySettings={companySettings} userId={userId}
+        <DocumentShareModal formData={editor.formData} companySettings={companySettings} userId="local"
           isGeneratingPdf={editor.isGeneratingPdf} isPrinting={editor.isPrinting}
           onGeneratePDF={editor.handleGeneratePDF} onPrintThermal={editor.handlePrintThermal}
-          onClose={() => editor.setShowShareModal(false)} t={t} fMoney={fMoney}
-          onGetPdfBlob={editor.generatePDFBlob} />
+          onClose={() => editor.setShowShareModal(false)} t={t} fMoney={fMoney} />
       )}
       {editor.showSignatureModal && (
         <SignatureModal canvasRef={editor.canvasRef} onSave={editor.saveSignature}
           onClear={editor.clearSignature} onClose={() => editor.setShowSignatureModal(false)} />
       )}
     </Suspense>
-    </AuthGuard>
   );
 };
 

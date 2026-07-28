@@ -1,0 +1,59 @@
+{
+  "domain": "Data Safety and Privacy",
+  "findings": [
+    {
+      "psl_constant": "WEB_BROWSING_HISTORY",
+      "policy_id": "data_safety_section",
+      "issue_summary": "Data Safety Compliant (Local-Only)",
+      "severity": "SUGGESTION",
+      "files_involved": [
+        "/root/projetos/meu-app/biz-flowcloud/android/app/src/main/res/layout/activity_main.xml",
+        "/root/projetos/meu-app/biz-flowcloud/dist/assets/index-PqeuXPtB.js"
+      ],
+      "evidence": "The WebView element in activity_main.xml (line 9) is the standard Capacitor shell that renders the app's own React UI bundled in dist/. It does not access or collect the user's external web browsing history. The loadUrl pattern was not found in index-PqeuXPtB.js (false positive grep match). No web browsing history data collection logic exists in the codebase.",
+      "recommendation": "No action needed. WebView is used solely as the app rendering engine (Capacitor). This data type is not collected.",
+      "is_transferred": false,
+      "user_initiated": false,
+      "is_third_party": false,
+      "prominent_disclosure_status": "EXEMPT",
+      "purpose": "Local functionality only",
+      "linked_to_user": false
+    },
+    {
+      "psl_constant": "EMAIL",
+      "policy_id": "data_safety_section",
+      "issue_summary": "User-Initiated Collection",
+      "severity": "IMPORTANT",
+      "files_involved": [
+        "/root/projetos/meu-app/biz-flowcloud/android/app/src/main/assets/public/assets/index-BMHFFNQZ.js",
+        "/root/projetos/meu-app/biz-flowcloud/api/auth/callback.js",
+        "/root/projetos/meu-app/biz-flowcloud/api/db.js"
+      ],
+      "evidence": "Email is collected in three paths: (1) user-provided email during Supabase Auth sign-up/sign-in via index-BMHFFNQZ.js (supabase-js auth client sends email to Supabase Auth endpoint); (2) Google OAuth callback at api/auth/callback.js:34 (tokens.email passed to salvarToken()); (3) stored server-side via api/db.js:43-46 in user_tokens table. All paths are user-initiated (user chooses to sign up or connect Gmail). Destination is the developer's own Supabase/PostgreSQL backend (first party).",
+      "recommendation": "Declare email collection in Play Store Data Safety form under 'App functionality' with user-initiated flag. No prominent in-app disclosure required since collection is user-initiated.",
+      "is_transferred": true,
+      "user_initiated": true,
+      "is_third_party": false,
+      "prominent_disclosure_status": "EXEMPT",
+      "purpose": "App functionality",
+      "linked_to_user": true
+    },
+    {
+      "psl_constant": "EMAILS",
+      "policy_id": "data_safety_section",
+      "issue_summary": "Manual Sharing",
+      "severity": "SUGGESTION",
+      "files_involved": [
+        "/root/projetos/meu-app/biz-flowcloud/api/enviar.js"
+      ],
+      "evidence": "Full email content (subject, body, recipient, attachment) is transmitted when the user composes and sends an email via api/enviar.js:50 (transporter.sendMail()). The user provides all fields (destinatario, assunto, corpoHtml, pdfBase64) via POST request. The email is relayed through the developer's Vercel server to Gmail API (third-party delivery service chosen by the user). This is a manual sharing action by the user.",
+      "recommendation": "Policy exempt (manual sharing). No disclosure or Play Store declaration needed. User explicitly triggers the send action with full knowledge of the content being transmitted.",
+      "is_transferred": true,
+      "user_initiated": true,
+      "is_third_party": true,
+      "prominent_disclosure_status": "EXEMPT",
+      "purpose": "App functionality",
+      "linked_to_user": true
+    }
+  ]
+}

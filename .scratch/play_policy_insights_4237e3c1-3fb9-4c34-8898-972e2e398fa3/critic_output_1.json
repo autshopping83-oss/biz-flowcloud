@@ -1,0 +1,24 @@
+{
+  "1": {
+    "action": "VERIFIED",
+    "confidence": "High",
+    "critic_justification": "Core finding VERIFIED: PDFs are generated client-side via jsPDF (DocumentShareModal.tsx:32-64) and shared via user-initiated actions. However, the worker's claim that DocumentShareModal uses api/enviar.js POST endpoint is INCORRECT — the actual flow (DocumentShareModal.tsx:205-257) uses Capacitor Share.share() (native Android Share Sheet) with mailto:/AppLauncher.openUrl fallback, NOT a POST to api/enviar.js. Since the Share Sheet is outside the developer's control, is_third_party should be true, not false. The api/enviar.js endpoint exists but is not called by DocumentShareModal. The overall data type (FILES_AND_DOCS), purpose (App functionality - Email document sharing), and user-initiated status are correct.",
+    "issue_summary": "User-Initiated Collection: Documents/PDFs are generated client-side (jspdf) and transmitted to recipients via user-initiated Android Share Sheet (Capacitor Share.share()) or mailto: fallback. Exempt from prominent disclosure per Case 3 but must be declared in the Play Store Data Safety form.",
+    "severity": "IMPORTANT",
+    "recommendation": "Declare 'App functionality - Email document sharing' in Play Store Data Safety section for FILES_AND_DOCS under user-initiated data collection (Case 3: transferred, user-initiated). Note that the Android Share Sheet allows sharing with third-party apps at the user's discretion, so is_third_party should be set accordingly per the actual transport mechanism used."
+  },
+  "2": {
+    "action": "VERIFIED",
+    "confidence": "High",
+    "critic_justification": "Fully VERIFIED. syncService.ts:13-89 reads receipt/purchase data from local Dexie (IndexedDB) database (type, number, date, client_name, items, total, etc.) and upserts to Supabase 'documents' table via first-party backend. App.tsx:128-144 binds handleSync to Dashboard's sync button. Dashboard.tsx:133-139 shows the 'Sincronizar com a Nuvem' button only when isConnected && onSync, requiring explicit user click. Claims of user_initiated=true, is_third_party=false, prominent_disclosure_status=EXEMPT are all accurate.",
+    "severity": "IMPORTANT",
+    "recommendation": "Declare 'App functionality - Cloud sync and backup' in Play Store Data Safety section for PURCHASE_HISTORY under user-initiated data collection (Case 3: transferred, user-initiated, first-party)."
+  },
+  "4": {
+    "action": "VERIFIED",
+    "confidence": "High",
+    "critic_justification": "Fully VERIFIED. AuthService.ts:16 calls supabase.auth.signInWithPassword({email, password}) for login. AuthService.ts:28 calls supabase.auth.signUp({email, password}) for registration. supabase.ts:12 initializes Supabase client with URL and anon key. All authentication flows require explicit user input (typing email/password and clicking submit). Transmission is user-initiated to first-party service provider (Supabase). Claims of user_initiated=true, is_third_party=false, prominent_disclosure_status=EXEMPT are all accurate.",
+    "severity": "IMPORTANT",
+    "recommendation": "User account data is transmitted to Supabase (first-party service provider) for authentication purposes. This must be declared in the Play Store Data Safety form under 'App functionality' with data type 'Email address' and 'Password'. No prominent in-app disclosure is required as the transmission is user-initiated (Case 3 per evaluation matrix)."
+  }
+}
