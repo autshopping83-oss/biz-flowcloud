@@ -2,26 +2,74 @@
 import { ReceiptData, CompanySettings, DocumentType, Transaction, SavedClient, SavedProduct } from '../types';
 import { supabase } from './supabase';
 
+// Simple in-memory cache with TTL to avoid redundant refetches.
+const cache = new Map<string, { data: unknown; expiresAt: number }>();
+const TTL = 30_000;
+
+const cacheGet = <T>(key: string): T | undefined => {
+  const entry = cache.get(key);
+  if (!entry) return undefined;
+  if (Date.now() > entry.expiresAt) {
+    cache.delete(key);
+    return undefined;
+  }
+  return entry.data as T;
+};
+
+const cacheSet = (key: string, data: unknown) => {
+  cache.set(key, { data, expiresAt: Date.now() + TTL });
+};
+
+const cacheDel = (prefix: string) => {
+  for (const key of Array.from(cache.keys())) {
+    if (key.startsWith(prefix)) cache.delete(key);
+  }
+};
+
 // --- CLIENTES SALVOS ---
 
 export const getSavedClients = async (userId: string): Promise<SavedClient[]> => {
   if (!userId || !supabase) return [];
+  const cacheKey = `clients:${userId}`;
+  const cached = cacheGet<SavedClient[]>(cacheKey);
+  if (cached) return cached;
   try {
     const { data, error } = await supabase
       .from('saved_clients')
       .select('name, contact, nuit, location, user_id')
       .eq('user_id', userId);
     if (error) throw error;
-    return (data || []).map(c => ({
+    const result = (data || []).map(c => ({
       name: c.name,
       contact: c.contact || '',
       nuit: c.nuit || '',
       location: c.location || '',
       userId: c.user_id,
     }));
+    cacheSet(cacheKey, result);
+    return result;
   } catch (e) {
     console.error('Error fetching clients:', e);
     return [];
+  }
+};
+
+export const getSavedClientByName = async (userId: string, name: string): Promise<SavedClient | null> => {
+  if (!userId || !name || !supabase) return null;
+  try {
+    const { data, error } = await supabase
+      .from('saved_clients')
+      .select('name, contact, nuit, location, user_id')
+      .eq('user_id', userId)
+      .eq('name', name)
+      .limit(1);
+    if (error) throw error;
+    if (!data || data.length === 0) return null;
+    const c = data[0]!;
+    return { name: c.name, contact: c.contact ?? '', nuit: c.nuit ?? '', location: c.location ?? '', userId: c.user_id };
+  } catch (e) {
+    console.error('Error fetching client by name:', e);
+    return null;
   }
 };
 
@@ -36,6 +84,7 @@ export const addClient = async (client: SavedClient): Promise<void> => {
       location: client.location,
     });
     if (error) throw error;
+    cacheDel(`clients:${client.userId}`);
   } catch (e) {
     console.error('Error adding client:', e);
     throw new Error('Erro ao adicionar cliente');
@@ -54,17 +103,22 @@ export const deleteClient = async (_id: number): Promise<void> => {
 
 export const getSavedProducts = async (userId: string): Promise<SavedProduct[]> => {
   if (!userId || !supabase) return [];
+  const cacheKey = `products:${userId}`;
+  const cached = cacheGet<SavedProduct[]>(cacheKey);
+  if (cached) return cached;
   try {
     const { data, error } = await supabase
       .from('saved_products')
       .select('description, unit_price, user_id')
       .eq('user_id', userId);
     if (error) throw error;
-    return (data || []).map(p => ({
+    const result = (data || []).map(p => ({
       description: p.description,
       unitPrice: p.unit_price || 0,
       userId: p.user_id,
     }));
+    cacheSet(cacheKey, result);
+    return result;
   } catch (e) {
     console.error('Error fetching saved products:', e);
     return [];
@@ -154,6 +208,8 @@ const mapReceiptToDocument = (receipt: ReceiptData, userId: string) => ({
   created_at: new Date(receipt.createdAt).toISOString(),
 });
 
+const DOCUMENT_LIST_COLUMNS = 'id, type, number, date, currency, language, client_name, client_contact, client_location, client_nuit, stamp_text, status, document_theme, total, subtotal, tax_rate, tax_amount, discount, created_at';
+
 export const saveReceipt = async (receipt: ReceiptData, userId: string): Promise<ReceiptData[]> => {
   if (!userId || !supabase) return [];
   try {
@@ -186,8 +242,12 @@ export const saveReceipt = async (receipt: ReceiptData, userId: string): Promise
       if (txnError) console.warn('Transaction sync error:', txnError.message);
     }
 
-    await learnClient(receipt, userId);
-    await learnProducts(receipt, userId);
+    await learnClientAndProducts(receipt, userId);
+
+    cacheDel(`history:${userId}`);
+    cacheDel(`transactions:${userId}`);
+    cacheDel(`clients:${userId}`);
+    cacheDel(`products:${userId}`);
 
     return await getHistory(userId);
   } catch (e) {
@@ -201,6 +261,8 @@ export const deleteReceipt = async (id: string, userId: string): Promise<Receipt
   try {
     const { error } = await supabase.from('documents').delete().eq('id', id);
     if (error) throw error;
+    cacheDel(`history:${userId}`);
+    cacheDel(`transactions:${userId}`);
     return await getHistory(userId);
   } catch (e) {
     console.error('Delete receipt error:', e);
@@ -208,65 +270,89 @@ export const deleteReceipt = async (id: string, userId: string): Promise<Receipt
   }
 };
 
-export const getHistory = async (userId: string): Promise<ReceiptData[]> => {
+export const getHistory = async (userId: string, limit = 200): Promise<ReceiptData[]> => {
   if (!userId || !supabase) return [];
+  const cacheKey = `history:${userId}`;
+  const cached = cacheGet<ReceiptData[]>(cacheKey);
+  if (cached) return cached;
   try {
     const { data, error } = await supabase
       .from('documents')
-      .select('*')
+      .select(DOCUMENT_LIST_COLUMNS)
       .eq('user_id', userId)
-      .order('date', { ascending: false });
+      .order('date', { ascending: false })
+      .limit(limit);
     if (error) throw error;
-    return (data || []).map(mapDocumentToReceipt);
+    const result = (data || []).map(mapDocumentToReceipt);
+    cacheSet(cacheKey, result);
+    return result;
   } catch (e) {
     console.error('Error fetching history:', e);
     return [];
   }
 };
 
-// --- HELPERS ---
-
-const learnClient = async (doc: ReceiptData, userId: string) => {
-  if (!doc.clientName || !userId || !supabase) return;
+export const getDocumentById = async (id: string): Promise<ReceiptData | null> => {
+  if (!id || !supabase) return null;
   try {
-    const { data } = await supabase
-      .from('saved_clients')
-      .select('id')
-      .eq('user_id', userId)
-      .eq('name', doc.clientName)
-      .limit(1);
-    if (!data || data.length === 0) {
-      await supabase.from('saved_clients').insert({
-        user_id: userId,
-        name: doc.clientName,
-        contact: doc.clientContact,
-        nuit: doc.clientNuit,
-        location: doc.clientLocation,
-      });
-    }
+    const { data, error } = await supabase
+      .from('documents')
+      .select('*')
+      .eq('id', id)
+      .single();
+    if (error || !data) return null;
+    return mapDocumentToReceipt(data);
   } catch (e) {
-    console.warn('learnClient error:', e);
+    console.error('Error fetching document:', e);
+    return null;
   }
 };
 
-const learnProducts = async (doc: ReceiptData, userId: string) => {
+// --- HELPERS ---
+
+const learnClientAndProducts = async (doc: ReceiptData, userId: string) => {
   if (!userId || !supabase) return;
-  try {
-    for (const item of doc.items) {
-      if (!item.description) continue;
-      const { data } = await supabase
-        .from('saved_products')
-        .select('id')
-        .eq('user_id', userId)
-        .eq('description', item.description)
-        .limit(1);
-      if (!data || data.length === 0) {
-        await supabase.from('saved_products').insert({
+
+  // Cliente: 1 query para verificar + 1 insert (max), em vez de select+insert
+  if (doc.clientName) {
+    try {
+      const existing = await getSavedClientByName(userId, doc.clientName);
+      if (!existing) {
+        await supabase.from('saved_clients').insert({
           user_id: userId,
-          description: item.description,
-          unit_price: item.unitPrice,
+          name: doc.clientName,
+          contact: doc.clientContact || '',
+          nuit: doc.clientNuit || '',
+          location: doc.clientLocation || '',
         });
       }
+    } catch (e) {
+      console.warn('learnClient error:', e);
+    }
+  }
+
+  // Produtos: batch — 1 query para todos os descriptions + 1 insert (max)
+  const descriptions = doc.items.map(i => i.description).filter(Boolean);
+  if (descriptions.length === 0) return;
+
+  const uniqueDescriptions = Array.from(new Set(descriptions));
+  try {
+    const { data } = await supabase
+      .from('saved_products')
+      .select('description')
+      .eq('user_id', userId)
+      .in('description', uniqueDescriptions);
+
+    const existingSet = new Set((data || []).map(r => r.description));
+    const toInsert = uniqueDescriptions
+      .filter(d => !existingSet.has(d))
+      .map(d => {
+        const item = doc.items.find(i => i.description === d);
+        return { user_id: userId, description: d, unit_price: item?.unitPrice ?? 0 };
+      });
+
+    if (toInsert.length > 0) {
+      await supabase.from('saved_products').insert(toInsert);
     }
   } catch (e) {
     console.warn('learnProducts error:', e);
@@ -310,6 +396,7 @@ export const saveCompanySettings = async (settings: CompanySettings, userId: str
       updated_at: new Date().toISOString(),
     }, { onConflict: 'id' });
     if (error) throw error;
+    cacheDel(`settings:${userId}`);
   } catch (e) {
     console.error('Error saving settings:', e);
     throw new Error('Erro ao guardar definições');
@@ -318,14 +405,17 @@ export const saveCompanySettings = async (settings: CompanySettings, userId: str
 
 export const getCompanySettings = async (userId: string): Promise<CompanySettings | null> => {
   if (!userId || !supabase) return null;
+  const cacheKey = `settings:${userId}`;
+  const cached = cacheGet<CompanySettings>(cacheKey);
+  if (cached) return cached;
   try {
     const { data, error } = await supabase
       .from('profiles')
-      .select('*')
+      .select('id, company_name, address, nuit, contact, logo, currency, language, theme, plan, custom_stamp, signature, user_phone, user_email, default_tax_rate')
       .eq('id', userId)
       .single();
     if (error || !data) return null;
-    return {
+    const result: CompanySettings = {
       name: data.company_name || '',
       address: data.address || '',
       nuit: data.nuit || '',
@@ -341,6 +431,8 @@ export const getCompanySettings = async (userId: string): Promise<CompanySetting
       userEmail: data.user_email || '',
       defaultTaxRate: data.default_tax_rate || 16,
     };
+    cacheSet(cacheKey, result);
+    return result;
   } catch (e) {
     console.error('Error fetching settings:', e);
     return null;
@@ -349,16 +441,20 @@ export const getCompanySettings = async (userId: string): Promise<CompanySetting
 
 // --- TRANSACTIONS ---
 
-export const getTransactions = async (userId: string): Promise<Transaction[]> => {
+export const getTransactions = async (userId: string, limit = 200): Promise<Transaction[]> => {
   if (!userId || !supabase) return [];
+  const cacheKey = `transactions:${userId}`;
+  const cached = cacheGet<Transaction[]>(cacheKey);
+  if (cached) return cached;
   try {
     const { data, error } = await supabase
       .from('transactions')
-      .select('*')
+      .select('id, user_id, type, amount, description, category, date, created_at, receipt_id')
       .eq('user_id', userId)
-      .order('date', { ascending: false });
+      .order('date', { ascending: false })
+      .limit(limit);
     if (error) throw error;
-    return (data || []).map(t => ({
+    const result = (data || []).map(t => ({
       id: t.id,
       userId: t.user_id,
       type: t.type,
@@ -369,6 +465,8 @@ export const getTransactions = async (userId: string): Promise<Transaction[]> =>
       timestamp: new Date(t.created_at || t.date).getTime(),
       receiptId: t.receipt_id,
     }));
+    cacheSet(cacheKey, result);
+    return result;
   } catch (e) {
     console.error('Error fetching transactions:', e);
     return [];
@@ -389,6 +487,7 @@ export const addTransaction = async (t: Transaction, userId: string): Promise<Tr
       receipt_id: t.receiptId,
     }, { onConflict: 'id' });
     if (error) throw error;
+    cacheDel(`transactions:${userId}`);
     return await getTransactions(userId);
   } catch (e) {
     console.error('Error adding transaction:', e);
@@ -401,6 +500,7 @@ export const deleteTransaction = async (id: string, userId: string): Promise<Tra
   try {
     const { error } = await supabase.from('transactions').delete().eq('id', id);
     if (error) throw error;
+    cacheDel(`transactions:${userId}`);
     return await getTransactions(userId);
   } catch (e) {
     console.error('Error deleting transaction:', e);

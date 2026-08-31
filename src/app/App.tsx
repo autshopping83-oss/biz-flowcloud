@@ -3,7 +3,7 @@
  * Fluxo: AuthGuard -> App -> useAuth(userId) -> useAppLifecycle + useDocumentEditor -> Views
  */
 
-import React, { useState, lazy, Suspense } from 'react';
+import React, { useState, lazy, Suspense, useCallback } from 'react';
 import { ReceiptData, CompanySettings, SavedClient, SavedProduct } from '../types';
 import { Logo } from '../components/Logo';
 import { V } from '../_cachebuster/version';
@@ -11,6 +11,7 @@ import { useToast } from '../components/ToastContext';
 import { useAuth } from '../features/auth/AuthContext';
 import { useAppLifecycle } from './hooks/useAppLifecycle';
 import { useDocumentEditor } from '../features/documents/hooks/useDocumentEditor';
+import { getDocumentById } from '../services/storageService';
 import { getTranslation, formatMoney } from '../services/translationService';
 import { AppEditorView } from './views/AppEditorView';
 import { SignatureModal } from '../features/documents/components/SignatureModal';
@@ -92,6 +93,12 @@ const App: React.FC<{ onReady?: () => void }> = ({ onReady }) => {
     localStorage.setItem('bizflow-theme', newTheme);
   };
 
+  const handleLoadDocument = useCallback(async (doc: ReceiptData) => {
+    const full = await getDocumentById(doc.id);
+    editor.setFormData(full || doc);
+    setCurrentView('app');
+  }, [editor]);
+
   return (
     <Suspense fallback={<PageLoader />}>
       {currentView === 'loading' && <PageLoader />}
@@ -99,13 +106,13 @@ const App: React.FC<{ onReady?: () => void }> = ({ onReady }) => {
         <Dashboard history={history} companySettings={companySettings}
           onLogout={handleLogout}
           onNewDocument={editor.initNewDocument} onOpenSettings={() => setShowSettingsModal(true)}
-          onLoadDocument={(doc) => { editor.setFormData(doc); setCurrentView('app'); editor.setMobileTab('preview'); }}
+          onLoadDocument={(doc) => { handleLoadDocument(doc); editor.setMobileTab('preview'); }}
           onViewHistory={() => setCurrentView('history')} onToggleTheme={toggleTheme}
           t={t} userId={userId} onDeleteDocument={editor.handleDeleteDocument} />
       )}
       {currentView === 'history' && (
         <HistoryPage history={history} onBack={() => setCurrentView('home')}
-          onLoadDocument={(doc) => { editor.setFormData(doc); setCurrentView('app'); }}
+          onLoadDocument={handleLoadDocument}
           onDeleteDocument={editor.handleDeleteDocument} onDuplicateDocument={editor.handleDuplicateDocument}
           currency={companySettings.currency} lang={companySettings.language} />
       )}

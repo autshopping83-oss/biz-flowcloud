@@ -47,7 +47,13 @@ export const useAppLifecycle = ({
 
   const loadData = async () => {
     try {
-      const localSettings = await getCompanySettings(userId);
+      const [localSettings, hist, clients, products] = await Promise.all([
+        getCompanySettings(userId),
+        getHistory(userId),
+        getSavedClients(userId),
+        getSavedProducts(userId),
+      ]);
+
       if (localSettings) {
         setCompanySettings(prev => ({ ...prev, ...localSettings, plan: 'PRO' }));
         const theme = localSettings.theme || 'light';
@@ -63,10 +69,9 @@ export const useAppLifecycle = ({
         }
       }
 
-      const hist = await getHistory(userId);
       setHistory(hist);
-      setSavedClients(await getSavedClients(userId));
-      setSavedProducts(await getSavedProducts(userId));
+      setSavedClients(clients);
+      setSavedProducts(products);
 
       const view = currentViewRef.current;
       if (['loading', 'login', 'register', 'forgotPassword'].includes(view)) {
