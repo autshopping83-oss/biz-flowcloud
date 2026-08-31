@@ -55,7 +55,7 @@ export function useDocumentEditor({
     }
   }, [formData.items, formData.taxRate, formData.discount]);
 
-  const { isGeneratingPdf, isSharing, isPrinting, localDirHandle, requestFolderPermission, handleGeneratePDF, handleShareWhatsApp, handlePrintThermal } = useDocumentActions({
+  const { isGeneratingPdf, isSharing, isPrinting, handleGeneratePDF, handleShareWhatsApp, handlePrintThermal } = useDocumentActions({
     formData,
     receiptRef,
     ghostReceiptRef,
@@ -185,8 +185,8 @@ export function useDocumentEditor({
     receiptRef, ghostReceiptRef, thermalReceiptRef, 
     canvasRef: signatureCanvas.canvasRef,
     settingsSignatureCanvasRef: signatureCanvas.settingsSignatureCanvasRef,
-    isGeneratingPdf, isSharing, isPrinting, localDirHandle,
-    requestFolderPermission, handleGeneratePDF, handleShareWhatsApp, handlePrintThermal,
+    isGeneratingPdf, isSharing, isPrinting,
+    handleGeneratePDF, handleShareWhatsApp, handlePrintThermal,
     setMobileTab, setShowSignatureModal, setShowShareModal,
     initNewDocument, handleDuplicateDocument,
     handleFormDataChange, handleNewItemChange, handleAddItem, handleRemoveItem,

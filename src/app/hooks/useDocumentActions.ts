@@ -25,20 +25,6 @@ export const useDocumentActions = ({
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
   const [isPrinting, setIsPrinting] = useState(false);
-  const [localDirHandle, setLocalDirHandle] = useState<FileSystemDirectoryHandle | null>(null);
-
-  const requestFolderPermission = useCallback(async () => {
-    if (!window.showDirectoryPicker) return null;
-    try {
-      const handle = await window.showDirectoryPicker({ mode: 'readwrite' });
-      setLocalDirHandle(handle);
-      notify('Pasta de armazenamento ativada!', 'success');
-      return handle;
-    } catch {
-      notify('Permissão de pasta não concedida.', 'info');
-      return null;
-    }
-  }, [notify]);
 
   const generatePDFBlob = useCallback(async (): Promise<{ blob: Blob; fileName: string } | null> => {
     const targetRef = ghostReceiptRef.current || receiptRef.current;
@@ -96,34 +82,10 @@ export const useDocumentActions = ({
 
       const { blob, fileName } = pdfData;
 
-      let dirHandle = localDirHandle;
-      if (!dirHandle && window.showDirectoryPicker) {
-        dirHandle = await requestFolderPermission();
-      }
-
-      if (dirHandle) {
-        try {
-          const permission = await (dirHandle as FileSystemDirectoryHandle & { queryPermission(opts: { mode: 'read' | 'readwrite' }): Promise<PermissionState> }).queryPermission({ mode: 'readwrite' });
-          if (permission !== 'granted') await (dirHandle as FileSystemDirectoryHandle & { requestPermission(opts: { mode: 'read' | 'readwrite' }): Promise<PermissionState> }).requestPermission({ mode: 'readwrite' });
-          const subfolderName = formData.type === 'INVOICE' ? 'Faturas' : formData.type === 'INVOICE_RECEIPT' ? 'Faturas-Recibos' : formData.type === 'QUOTE' ? 'Orcamentos' : 'Recibos';
-          const subDir = await dirHandle.getDirectoryHandle(subfolderName, { create: true });
-          const fileHandle = await subDir.getFileHandle(fileName, { create: true });
-          const writable = await fileHandle.createWritable();
-          await writable.write(blob);
-          await writable.close();
-          notify(`Salvo com sucesso na pasta: ${subfolderName}`, 'success');
-        } catch {
-          const link = document.createElement('a');
-          link.href = URL.createObjectURL(blob);
-          link.download = fileName;
-          link.click();
-        }
-      } else {
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = fileName;
-        link.click();
-      }
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = fileName;
+      link.click();
 
       await handleSave(true);
     } catch {
@@ -131,7 +93,7 @@ export const useDocumentActions = ({
     } finally {
       setIsGeneratingPdf(false);
     }
-  }, [formData, generatePDFBlob, handleSave, localDirHandle, notify, requestFolderPermission]);
+  }, [formData, generatePDFBlob, handleSave, notify]);
 
   const handleShareWhatsApp = useCallback(async () => {
     if (isSharing) return;
@@ -258,8 +220,6 @@ export const useDocumentActions = ({
     isGeneratingPdf,
     isSharing,
     isPrinting,
-    localDirHandle,
-    requestFolderPermission,
     handleGeneratePDF,
     handleShareWhatsApp,
     handlePrintThermal,

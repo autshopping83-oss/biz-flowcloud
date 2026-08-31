@@ -21,12 +21,6 @@ import { SettingsModal } from '../components/SettingsModal';
 const Dashboard = lazy(() => import('../components/Dashboard').then(m => ({ default: m.Dashboard })));
 const HistoryPage = lazy(() => import('../components/HistoryPage').then(m => ({ default: m.HistoryPage })));
 
-declare global {
-  interface Window {
-    showDirectoryPicker?: (options?: { mode?: 'read' | 'readwrite' }) => Promise<FileSystemDirectoryHandle>;
-  }
-}
-
 const PageLoader = () => (
   <div className="fixed top-0 left-0 w-full h-full bg-white dark:bg-slate-900 z-[9999] flex flex-col items-center justify-center">
     <Logo className="w-20 h-20 mb-6 animate-pulse" />
@@ -138,9 +132,8 @@ const App: React.FC<{ onReady?: () => void }> = ({ onReady }) => {
           onUpdate={(e) => { const { name, value } = e.target; setCompanySettings(p => ({ ...p, [name]: value })); }}
           onLogoChange={(e) => { const f = e.target.files?.[0]; if (!f) return; const r = new FileReader(); r.onloadend = () => setCompanySettings(p => ({ ...p, logo: r.result as string })); r.readAsDataURL(f); }}
           onStampUpload={(e) => { const f = e.target.files?.[0]; if (!f) return; const r = new FileReader(); r.onloadend = () => setCompanySettings(p => ({ ...p, customStamp: r.result as string })); r.readAsDataURL(f); }}
-          onRequestFolderPermission={async () => { await editor.requestFolderPermission(); }}
           onSaveSettings={async () => { const { saveCompanySettings } = await import('../services/storageService'); await saveCompanySettings(companySettings, userId); notify('Definições guardadas!', 'success'); setShowSettingsModal(false); }}
-          isSavingSettings={false} localDirHandle={editor.localDirHandle}
+          isSavingSettings={false}
           onSaveSignature={editor.saveSettingsSignature} onClearSignature={editor.clearSettingsSignature} settingsSignatureCanvasRef={editor.settingsSignatureCanvasRef}
           handleSettingsSignatureStartDrawing={editor.handleSettingsSignatureStartDrawing} handleSettingsSignatureDraw={editor.handleSettingsSignatureDraw} handleSettingsSignatureStopDrawing={editor.handleSettingsSignatureStopDrawing} />
       )}
