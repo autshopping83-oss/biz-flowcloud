@@ -30,7 +30,7 @@ export const ProductsPage = ({ userId, onBack }: Props) => {
   const handleSave = async () => {
     if (!form.name.trim()) return;
     if (editId !== null) {
-      await updateProduct(editId, { name: form.name, price: form.price });
+      await updateProduct(editId, { name: form.name, price: form.price }, userId);
     } else {
       await addProduct({ name: form.name, price: form.price, userId, category: form.category });
     }
@@ -48,7 +48,7 @@ export const ProductsPage = ({ userId, onBack }: Props) => {
 
   const handleDelete = async (id: string) => {
     if (!confirm('Excluir este produto?')) return;
-    await deleteProduct(id);
+    await deleteProduct(id, userId);
     await loadProducts();
   };
 

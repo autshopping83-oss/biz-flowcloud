@@ -72,15 +72,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label className="text-xs font-bold text-slate-500 dark:text-slate-400 mb-2 block">WhatsApp / Telemovel (seu)</label>
-            <input type="text" name="userPhone" value={companySettings.userPhone || ''} onChange={onUpdate} placeholder="258840000000" className="w-full bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-xl p-3 text-sm dark:text-white transition-colors" />
-          </div>
-          <div>
-            <label className="text-xs font-bold text-slate-500 dark:text-slate-400 mb-2 block">Email (seu)</label>
-            <input type="email" name="userEmail" value={companySettings.userEmail || ''} onChange={onUpdate} placeholder="contato@exemplo.com" className="w-full bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-xl p-3 text-sm dark:text-white transition-colors" />
-          </div>
+        <div>
+          <label className="text-xs font-bold text-slate-500 dark:text-slate-400 mb-2 block">Email (seu)</label>
+          <input type="email" name="userEmail" value={companySettings.userEmail || ''} onChange={onUpdate} placeholder="contato@exemplo.com" className="w-full bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-xl p-3 text-sm dark:text-white transition-colors" />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

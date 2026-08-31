@@ -56,12 +56,16 @@ const App: React.FC<{ onReady?: () => void }> = ({ onReady }) => {
   const fMoney = (val: number) => formatMoney(val, companySettings.currency, companySettings.language);
 
   const handleLogout = async () => {
-    await signOut();
-    setIsGuest(false);
-    setCurrentView('loading');
+    const { clearPrivateCache } = await import('../services/storageService');
+    clearPrivateCache();
     setHistory([]);
     setSavedClients([]);
     setSavedProducts([]);
+    setCompanySettings(DefaultSettings);
+    setShowSettingsModal(false);
+    setIsGuest(false);
+    setCurrentView('loading');
+    await signOut();
   };
 
   useAppLifecycle({

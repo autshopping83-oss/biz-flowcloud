@@ -71,7 +71,6 @@ export interface CompanySettings {
   isAdmin?: boolean;
   customStamp?: string;
   signature?: string;
-  userPhone?: string;
   userEmail?: string;
 }
 
@@ -100,6 +99,7 @@ export interface Transaction {
 }
 
 export interface SavedClient {
+  id?: string;
   name: string;
   contact: string;
   nuit: string;
@@ -108,8 +108,10 @@ export interface SavedClient {
 }
 
 export interface SavedProduct {
+  id?: string;
   description: string;
   unitPrice: number;
+  category?: string;
   userId?: string;
 }
 

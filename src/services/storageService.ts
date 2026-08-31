@@ -26,6 +26,12 @@ const cacheDel = (prefix: string) => {
   }
 };
 
+// Clears all in-memory cached data. Must be called on sign-out so no private
+// data from a previous session leaks into the next account on the same browser.
+export const clearPrivateCache = () => {
+  cache.clear();
+};
+
 // --- CLIENTES SALVOS ---
 
 export const getSavedClients = async (userId: string): Promise<SavedClient[]> => {
@@ -36,10 +42,11 @@ export const getSavedClients = async (userId: string): Promise<SavedClient[]> =>
   try {
     const { data, error } = await supabase
       .from('saved_clients')
-      .select('name, contact, nuit, location, user_id')
+      .select('id, name, contact, nuit, location, user_id')
       .eq('user_id', userId);
     if (error) throw error;
     const result = (data || []).map(c => ({
+      id: c.id as string,
       name: c.name,
       contact: c.contact || '',
       nuit: c.nuit || '',
@@ -59,14 +66,14 @@ export const getSavedClientByName = async (userId: string, name: string): Promis
   try {
     const { data, error } = await supabase
       .from('saved_clients')
-      .select('name, contact, nuit, location, user_id')
+      .select('id, name, contact, nuit, location, user_id')
       .eq('user_id', userId)
       .eq('name', name)
       .limit(1);
     if (error) throw error;
     if (!data || data.length === 0) return null;
     const c = data[0]!;
-    return { name: c.name, contact: c.contact ?? '', nuit: c.nuit ?? '', location: c.location ?? '', userId: c.user_id };
+    return { id: c.id as string, name: c.name, contact: c.contact ?? '', nuit: c.nuit ?? '', location: c.location ?? '', userId: c.user_id };
   } catch (e) {
     console.error('Error fetching client by name:', e);
     return null;
@@ -91,12 +98,29 @@ export const addClient = async (client: SavedClient): Promise<void> => {
   }
 };
 
-export const updateClient = async (_id: number, _updates: Partial<SavedClient>): Promise<void> => {
-  console.warn('updateClient: Supabase saved_clients uses composite key. Implement with user_id + name.');
+export const updateClient = async (id: string, updates: Partial<SavedClient>): Promise<void> => {
+  if (!id || !supabase) return;
+  const payload: Record<string, unknown> = {};
+  if (updates.name !== undefined) payload.name = updates.name;
+  if (updates.contact !== undefined) payload.contact = updates.contact;
+  if (updates.nuit !== undefined) payload.nuit = updates.nuit;
+  if (updates.location !== undefined) payload.location = updates.location;
+  const { error } = await supabase
+    .from('saved_clients')
+    .update(payload)
+    .eq('id', id);
+  if (error) throw error;
+  if (updates.userId) cacheDel(`clients:${updates.userId}`);
 };
 
-export const deleteClient = async (_id: number): Promise<void> => {
-  console.warn('deleteClient: Supabase saved_clients uses composite key. Implement with user_id + name.');
+export const deleteClient = async (id: string, userId?: string): Promise<void> => {
+  if (!id || !supabase) return;
+  const { error } = await supabase
+    .from('saved_clients')
+    .delete()
+    .eq('id', id);
+  if (error) throw error;
+  if (userId) cacheDel(`clients:${userId}`);
 };
 
 // --- PRODUTOS SALVOS (auto-learned) ---
@@ -109,12 +133,14 @@ export const getSavedProducts = async (userId: string): Promise<SavedProduct[]> 
   try {
     const { data, error } = await supabase
       .from('saved_products')
-      .select('description, unit_price, user_id')
+      .select('id, description, unit_price, category, user_id')
       .eq('user_id', userId);
     if (error) throw error;
     const result = (data || []).map(p => ({
+      id: p.id as string,
       description: p.description,
       unitPrice: p.unit_price || 0,
+      category: (p.category as string) || '',
       userId: p.user_id,
     }));
     cacheSet(cacheKey, result);
@@ -125,25 +151,79 @@ export const getSavedProducts = async (userId: string): Promise<SavedProduct[]> 
   }
 };
 
-// --- PRODUCT CATALOG ---
+// --- PRODUCT CATALOG (shared saved_products table) ---
 
-export const getProducts = async (_userId: string): Promise<import('../types').Product[]> => {
-  return [];
+const mapSavedProductToProduct = (p: Record<string, unknown>): import('../types').Product => ({
+  id: p.id as string,
+  name: p.description as string,
+  price: (p.unit_price as number) || 0,
+  category: (p.category as string) || '',
+  userId: p.user_id as string,
+  createdAt: p.created_at ? new Date(p.created_at as string).getTime() : Date.now(),
+  updatedAt: p.updated_at ? new Date(p.updated_at as string).getTime() : Date.now(),
+});
+
+export const getProducts = async (userId: string): Promise<import('../types').Product[]> => {
+  if (!userId || !supabase) return [];
+  const cacheKey = `products:${userId}`;
+  const cached = cacheGet<import('../types').Product[]>(cacheKey);
+  if (cached) return cached;
+  try {
+    const { data, error } = await supabase
+      .from('saved_products')
+      .select('id, description, unit_price, category, user_id, created_at, updated_at')
+      .eq('user_id', userId)
+      .order('description', { ascending: true });
+    if (error) throw error;
+    const result = (data || []).map(mapSavedProductToProduct);
+    cacheSet(cacheKey, result);
+    return result;
+  } catch (e) {
+    console.error('Error fetching product catalog:', e);
+    return [];
+  }
 };
 
 export const addProduct = async (product: Omit<import('../types').Product, 'id' | 'createdAt' | 'updatedAt'>): Promise<import('../types').Product> => {
-  const newProduct: import('../types').Product = {
-    ...product,
-    id: `prod_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-    createdAt: Date.now(),
-    updatedAt: Date.now(),
-  };
-  return newProduct;
+  if (!supabase) throw new Error('Supabase não configurado');
+  const { data, error } = await supabase
+    .from('saved_products')
+    .insert({
+      user_id: product.userId,
+      description: product.name,
+      unit_price: product.price,
+      category: product.category || '',
+    })
+    .select('id, description, unit_price, category, user_id, created_at, updated_at')
+    .single();
+  if (error) throw error;
+  cacheDel(`products:${product.userId}`);
+  const mapped = mapSavedProductToProduct(data as Record<string, unknown>);
+  cacheSet(`products:${product.userId}`, [mapped]);
+  return mapped;
 };
 
-export const updateProduct = async (_productId: string, _updates: Partial<Pick<import('../types').Product, 'name' | 'price' | 'category'>>): Promise<void> => {};
+export const updateProduct = async (
+  productId: string,
+  updates: Partial<Pick<import('../types').Product, 'name' | 'price' | 'category'>>,
+  userId?: string,
+): Promise<void> => {
+  if (!supabase || !productId) return;
+  const payload: Record<string, unknown> = {};
+  if (updates.name !== undefined) payload.description = updates.name;
+  if (updates.price !== undefined) payload.unit_price = updates.price;
+  if (updates.category !== undefined) payload.category = updates.category;
+  const { error } = await supabase.from('saved_products').update(payload).eq('id', productId);
+  if (error) throw error;
+  if (userId) cacheDel(`products:${userId}`);
+};
 
-export const deleteProduct = async (_productId: string): Promise<void> => {};
+export const deleteProduct = async (productId: string, userId?: string): Promise<void> => {
+  if (!supabase || !productId) return;
+  const { error } = await supabase.from('saved_products').delete().eq('id', productId);
+  if (error) throw error;
+  if (userId) cacheDel(`products:${userId}`);
+};
 
 // --- DOCUMENTS ---
 
@@ -194,7 +274,7 @@ const mapReceiptToDocument = (receipt: ReceiptData, userId: string) => ({
   company_nuit: receipt.companyNuit || '',
   company_contact: receipt.companyContact || '',
   company_logo: receipt.companyLogo || '',
-  items: JSON.stringify(receipt.items),
+  items: receipt.items,
   subtotal: receipt.subtotal,
   tax_rate: receipt.taxRate,
   tax_amount: receipt.taxAmount,
@@ -218,8 +298,16 @@ export const saveReceipt = async (receipt: ReceiptData, userId: string): Promise
     if (error) throw error;
 
     if (receipt.type === 'INVOICE_RECEIPT') {
+      let transactionId: string | undefined;
+      const existing = await supabase
+        .from('transactions')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('receipt_id', receipt.id)
+        .maybeSingle();
+      if (!existing.error && existing.data) transactionId = existing.data.id as string;
       const transaction: Omit<Transaction, 'timestamp'> & { timestamp: number } = {
-        id: `txn-${receipt.id}`,
+        id: transactionId || crypto.randomUUID(),
         userId,
         type: 'INCOME',
         amount: receipt.total,
@@ -390,10 +478,8 @@ export const saveCompanySettings = async (settings: CompanySettings, userId: str
       plan: settings.plan,
       custom_stamp: settings.customStamp || '',
       signature: settings.signature || '',
-      user_phone: settings.userPhone || '',
-      user_email: settings.userEmail || '',
+      email: settings.userEmail || '',
       default_tax_rate: settings.defaultTaxRate || 16,
-      updated_at: new Date().toISOString(),
     }, { onConflict: 'id' });
     if (error) throw error;
     cacheDel(`settings:${userId}`);
@@ -411,7 +497,7 @@ export const getCompanySettings = async (userId: string): Promise<CompanySetting
   try {
     const { data, error } = await supabase
       .from('profiles')
-      .select('id, company_name, address, nuit, contact, logo, currency, language, theme, plan, custom_stamp, signature, user_phone, user_email, default_tax_rate')
+      .select('id, company_name, address, nuit, contact, logo, currency, language, theme, plan, custom_stamp, signature, email, default_tax_rate')
       .eq('id', userId)
       .single();
     if (error || !data) return null;
@@ -427,8 +513,7 @@ export const getCompanySettings = async (userId: string): Promise<CompanySetting
       plan: data.plan || 'PRO',
       customStamp: data.custom_stamp || '',
       signature: data.signature || '',
-      userPhone: data.user_phone || '',
-      userEmail: data.user_email || '',
+      userEmail: (data.email as string) || '',
       defaultTaxRate: data.default_tax_rate || 16,
     };
     cacheSet(cacheKey, result);

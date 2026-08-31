@@ -23,16 +23,15 @@ export const ClientsPage = ({ userId, savedClients, onBack, onUpdateClients, onV
     c.contact.toLowerCase().includes(search.toLowerCase())
   );
 
-  const clientWithId = (c: SavedClient, i: number) => c as SavedClient & { id: number };
-
   const resetForm = () => { setForm(initialForm); setEditIdx(null); setShowForm(false); };
 
   const handleSave = async () => {
     if (!form.name.trim()) return;
-    const { addClient, updateClient, deleteClient, getSavedClients } = await import('../../services/storageService');
+    const { addClient, updateClient, getSavedClients } = await import('../../services/storageService');
 
     if (editIdx !== null) {
-      await updateClient(editIdx, form);
+      const clientId = savedClients[editIdx]?.id;
+      if (clientId) await updateClient(clientId, { ...form, userId });
     } else {
       await addClient({ ...form, userId });
     }
@@ -47,10 +46,11 @@ export const ClientsPage = ({ userId, savedClients, onBack, onUpdateClients, onV
     setShowForm(true);
   };
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = async (id: string | undefined, userId: string) => {
+    if (!id) return;
     if (!confirm('Excluir este cliente?')) return;
     const { deleteClient, getSavedClients } = await import('../../services/storageService');
-    await deleteClient(id);
+    await deleteClient(id, userId);
     const updated = await getSavedClients(userId);
     onUpdateClients(updated);
   };
@@ -118,7 +118,7 @@ export const ClientsPage = ({ userId, savedClients, onBack, onUpdateClients, onV
                     className="px-3 py-1.5 text-xs bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-100 transition">
                     <i className="fa-solid fa-pen mr-1"></i>Editar
                   </button>
-                  <button onClick={() => handleDelete((c as SavedClient & { id?: number }).id ?? i)}
+                  <button onClick={() => handleDelete(c.id, userId)}
                     className="px-3 py-1.5 text-xs bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-100 transition">
                     <i className="fa-solid fa-trash mr-1"></i>Excluir
                   </button>
