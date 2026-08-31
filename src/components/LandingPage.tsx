@@ -6,11 +6,9 @@ interface Props {
   onStart: () => void;
   onLogin: () => void;
   onOpenLegal: (tab: 'PRIVACY' | 'SECURITY' | 'TERMS') => void;
-  onInstall?: () => void;
-  showInstallButton?: boolean;
 }
 
-export const LandingPage: React.FC<Props> = ({ onStart, onLogin, onOpenLegal, onInstall, showInstallButton }) => {
+export const LandingPage: React.FC<Props> = ({ onStart, onLogin, onOpenLegal }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const scrollToSection = (id: string) => {
@@ -34,12 +32,6 @@ export const LandingPage: React.FC<Props> = ({ onStart, onLogin, onOpenLegal, on
             <button onClick={() => scrollToSection('features')} className="hover:text-blue-600 transition-colors">Funcionalidades</button>
             <button onClick={() => scrollToSection('pricing')} className="hover:text-blue-600 transition-colors">Preços</button>
             
-            {showInstallButton && onInstall && (
-               <button onClick={onInstall} className="text-blue-600 hover:text-blue-800 font-bold flex items-center gap-2 border border-blue-100 dark:border-blue-900 px-3 py-1.5 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all">
-                 <i className="fa-solid fa-download"></i> Instalar App
-               </button>
-            )}
-
             <button onClick={onLogin} className="hover:text-blue-600 transition-colors">Entrar</button>
             <button onClick={onStart} className="bg-slate-900 dark:bg-white text-white dark:text-slate-900 px-6 py-2.5 rounded-xl font-bold hover:opacity-90 transition-all shadow-lg hover:shadow-xl active:scale-95">
               Começar Grátis
@@ -59,13 +51,7 @@ export const LandingPage: React.FC<Props> = ({ onStart, onLogin, onOpenLegal, on
            <button onClick={() => scrollToSection('features')} className="text-xl font-bold py-2 border-b border-slate-100 dark:border-slate-800 text-left">Funcionalidades</button>
            <button onClick={() => scrollToSection('pricing')} className="text-xl font-bold py-2 border-b border-slate-100 dark:border-slate-800 text-left">Preços</button>
            
-           {showInstallButton && onInstall && (
-              <button onClick={onInstall} className="text-xl font-bold py-2 border-b border-slate-100 dark:border-slate-800 text-left flex items-center gap-2 text-blue-600">
-                  <i className="fa-solid fa-download"></i> Instalar Aplicativo
-              </button>
-           )}
-
-           <button onClick={onLogin} className="text-xl font-bold py-2 border-b border-slate-100 dark:border-slate-800 text-left text-slate-600 dark:text-slate-300">Entrar na Conta</button>
+            <button onClick={onLogin} className="text-xl font-bold py-2 border-b border-slate-100 dark:border-slate-800 text-left text-slate-600 dark:text-slate-300">Entrar na Conta</button>
            <button onClick={onStart} className="bg-blue-600 text-white py-4 rounded-xl font-bold text-lg shadow-lg">Criar Conta Grátis</button>
         </div>
       )}

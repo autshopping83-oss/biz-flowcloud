@@ -1,7 +1,6 @@
 /**
  * App - Componente principal orquestrador
- * Fluxo: AuthGuard → App → useAuth(userId) → useAppLifecycle + useDocumentEditor → Views
- * Cada utilizador autenticado vê apenas os seus dados (IndexedDB por userId).
+ * Fluxo: AuthGuard -> App -> useAuth(userId) -> useAppLifecycle + useDocumentEditor -> Views
  */
 
 import React, { useState, lazy, Suspense } from 'react';
@@ -24,7 +23,6 @@ const HistoryPage = lazy(() => import('../components/HistoryPage').then(m => ({ 
 declare global {
   interface Window {
     showDirectoryPicker?: (options?: { mode?: 'read' | 'readwrite' }) => Promise<FileSystemDirectoryHandle>;
-    deferredPrompt?: { prompt: () => Promise<void>; userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }> } | null;
   }
 }
 
@@ -54,11 +52,8 @@ const App: React.FC<{ onReady?: () => void }> = ({ onReady }) => {
   const [companySettings, setCompanySettings] = useState<CompanySettings>(DefaultSettings);
   const [savedClients, setSavedClients] = useState<SavedClient[]>([]);
   const [savedProducts, setSavedProducts] = useState<SavedProduct[]>([]);
-  const [isOnline, setIsOnline] = useState(navigator.onLine);
-  const [installPrompt, setInstallPrompt] = useState<Window['deferredPrompt']>(null);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
 
-  // Version tracking - force rebuild
   console.debug('BizFlow version:', V);
 
   const { notify } = useToast();
@@ -78,7 +73,7 @@ const App: React.FC<{ onReady?: () => void }> = ({ onReady }) => {
     userId,
     currentView, isGuest, setCurrentView: (v: string) => setCurrentView(v as AppView), setIsGuest,
     setHistory, setSavedClients, setSavedProducts, setCompanySettings,
-    setIsOnline, setLocalDirHandle: () => {}, onReady,
+    onReady,
   });
 
   const editor = useDocumentEditor({
@@ -89,18 +84,12 @@ const App: React.FC<{ onReady?: () => void }> = ({ onReady }) => {
   const toggleTheme = () => {
     const newTheme = companySettings.theme === 'dark' ? 'light' : 'dark';
     setCompanySettings(p => ({ ...p, theme: newTheme }));
-    // Apply dark class to HTML element
     if (newTheme === 'dark') {
       document.documentElement.classList.add('dark');
     } else {
       document.documentElement.classList.remove('dark');
     }
-    // Save to local storage
     localStorage.setItem('bizflow-theme', newTheme);
-  };
-
-  const handleInstallApp = () => {
-    if (installPrompt) { installPrompt.prompt(); installPrompt.userChoice.then(() => setInstallPrompt(null)); }
   };
 
   return (
@@ -112,8 +101,7 @@ const App: React.FC<{ onReady?: () => void }> = ({ onReady }) => {
           onNewDocument={editor.initNewDocument} onOpenSettings={() => setShowSettingsModal(true)}
           onLoadDocument={(doc) => { editor.setFormData(doc); setCurrentView('app'); editor.setMobileTab('preview'); }}
           onViewHistory={() => setCurrentView('history')} onToggleTheme={toggleTheme}
-          t={t} userId={userId} onDeleteDocument={editor.handleDeleteDocument}
-          onInstallApp={handleInstallApp} showInstallButton={!!installPrompt} />
+          t={t} userId={userId} onDeleteDocument={editor.handleDeleteDocument} />
       )}
       {currentView === 'history' && (
         <HistoryPage history={history} onBack={() => setCurrentView('home')}
@@ -123,7 +111,7 @@ const App: React.FC<{ onReady?: () => void }> = ({ onReady }) => {
       )}
       {(currentView === 'app' || isGuest) && (
         <AppEditorView formData={editor.formData} companySettings={companySettings} newItem={editor.newItem}
-          isGuest={isGuest} isOnline={isOnline} syncing={false}
+          isGuest={isGuest}
           isEnhancing={editor.isEnhancing} isSharing={editor.isSharing}
           isPrinting={editor.isPrinting} isGeneratingPdf={editor.isGeneratingPdf}
           mobileTab={editor.mobileTab} savedClients={savedClients} savedProducts={savedProducts}

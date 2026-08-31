@@ -1,8 +1,8 @@
 import { useCallback, useState } from 'react';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
-import { saveDirectoryHandle } from '../../services/storageService';
 import { validators } from '../../utils/validators';
+import { security } from '../../utils/security';
 import { ReceiptData } from '../../types';
 
 interface UseDocumentActionsParams {
@@ -32,7 +32,6 @@ export const useDocumentActions = ({
     try {
       const handle = await window.showDirectoryPicker({ mode: 'readwrite' });
       setLocalDirHandle(handle);
-      await saveDirectoryHandle(handle);
       notify('Pasta de armazenamento ativada!', 'success');
       return handle;
     } catch {
@@ -184,7 +183,7 @@ export const useDocumentActions = ({
 
       const itemsHtml = doc.items.map(item => `
         <tr>
-          <td style="padding:2px 0;font-size:10px">${item.description}</td>
+          <td style="padding:2px 0;font-size:10px">${security.sanitizeText(item.description)}</td>
           <td style="padding:2px 0;font-size:10px;text-align:right">${item.quantity}x</td>
           <td style="padding:2px 0;font-size:10px;text-align:right">${fM(item.unitPrice)}</td>
           <td style="padding:2px 0;font-size:10px;text-align:right;font-weight:bold">${fM(item.total)}</td>
@@ -208,19 +207,19 @@ export const useDocumentActions = ({
   @media print { body { width: 58mm; } }
 </style></head><body>
   <div class="center">
-    ${doc.companyName ? `<div class="h1">${doc.companyName}</div>` : ''}
-    ${doc.companyNuit ? `<div class="h2">NUIT: ${doc.companyNuit}</div>` : ''}
-    ${doc.companyAddress ? `<div style="font-size:10px">${doc.companyAddress}</div>` : ''}
+    ${doc.companyName ? `<div class="h1">${security.sanitizeText(doc.companyName)}</div>` : ''}
+    ${doc.companyNuit ? `<div class="h2">NUIT: ${security.sanitizeText(doc.companyNuit)}</div>` : ''}
+    ${doc.companyAddress ? `<div style="font-size:10px">${security.sanitizeText(doc.companyAddress)}</div>` : ''}
   </div>
   <hr>
   <div class="center">
     <div class="h1">${tipo}</div>
-    <div class="h2">Nº ${doc.number}</div>
-    <div class="h2">${doc.date}</div>
+    <div class="h2">Nº ${security.sanitizeText(doc.number)}</div>
+    <div class="h2">${security.sanitizeText(doc.date)}</div>
   </div>
   <hr>
-  ${doc.clientName ? `<div><b>Cliente:</b> ${doc.clientName}</div>` : ''}
-  ${doc.clientNuit ? `<div><b>NUIT:</b> ${doc.clientNuit}</div>` : ''}
+  ${doc.clientName ? `<div><b>Cliente:</b> ${security.sanitizeText(doc.clientName)}</div>` : ''}
+  ${doc.clientNuit ? `<div><b>NUIT:</b> ${security.sanitizeText(doc.clientNuit)}</div>` : ''}
   <hr>
   <table>
     <tr style="font-weight:bold;font-size:10px">
@@ -235,7 +234,7 @@ export const useDocumentActions = ({
     ${doc.discount > 0 ? `<div><b>Desconto:</b> -${fM(doc.discount)}</div>` : ''}
     <div class="total">Total: ${fM(doc.total)}</div>
   </div>
-  ${doc.stampText ? `<hr><div class="center bold" style="font-size:14px">${doc.stampText}</div>` : ''}
+  ${doc.stampText ? `<hr><div class="center bold" style="font-size:14px">${security.sanitizeText(doc.stampText)}</div>` : ''}
   <hr>
   <div class="center footer">
     <p>Obrigado pela preferência!</p>

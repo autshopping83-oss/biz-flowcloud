@@ -1,6 +1,7 @@
 // src/features/auth/AuthContext.tsx
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
-import type { User, AuthError, AuthApiError } from '@supabase/supabase-js';
+import type { User, AuthError } from '@supabase/supabase-js';
+import { AuthApiError } from '@supabase/supabase-js';
 import { supabase } from '../../services/supabase';
 
 interface AuthState {
@@ -77,7 +78,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         email_taken: 'Este email já está registado.',
         weak_password: 'A senha deve ter pelo menos 6 caracteres.',
       };
-      return messages[error.code] || error.message;
+      return (error.code && messages[error.code]) || error.message;
     }
     return error.message;
   };

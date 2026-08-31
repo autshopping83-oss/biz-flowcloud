@@ -78,11 +78,9 @@ Se o utilizador solicitar uma implementacao que quebre estas regras, crie acopla
 ## 4. STACK DO PROJETO
 
 - **Frontend**: React 19 + TypeScript + Vite
-- **Mobile**: Capacitor (Android)
 - **Backend/DB**: Supabase (Auth, Database, RLS)
 - **AI**: Google GenAI
-- **Offline**: Dexie (IndexedDB)
-- **Bluetooth**: Capacitor BLE
+- **Offline**: N/A (Web SaaS)
 - **Hosting**: Vercel
 
 ## 5. CONTEXTO DE PRODUCAO
@@ -90,5 +88,5 @@ Se o utilizador solicitar uma implementacao que quebre estas regras, crie acopla
 O projeto esta em producao na Vercel com Supabase. Qualquer alteracao deve considerar:
 - Compatibilidade com Vercel (serverless, cold starts)
 - Row Level Security (RLS) no Supabase
-- IndexedDB via Dexie para dados offline
+- Dados via Supabase (Web SaaS)
 - SPA routing (todas as rotas redirecionam para index.html)

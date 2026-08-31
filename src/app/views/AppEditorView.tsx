@@ -15,8 +15,6 @@ interface AppEditorViewProps {
   companySettings: CompanySettings;
   newItem: Partial<LineItem>;
   isGuest: boolean;
-  isOnline: boolean;
-  syncing: boolean;
   isEnhancing: boolean;
   isSharing: boolean;
   isPrinting: boolean;
@@ -49,7 +47,7 @@ interface AppEditorViewProps {
 }
 
 export const AppEditorView: React.FC<AppEditorViewProps> = ({
-  formData, companySettings, newItem, isGuest, isOnline, syncing,
+  formData, companySettings, newItem, isGuest,
   isEnhancing, isSharing, isPrinting, isGeneratingPdf, mobileTab,
   savedClients, savedProducts, receiptRef, ghostReceiptRef, thermalReceiptRef,
   t, fMoney, onBack, onOpenSettings, onShareWhatsApp, onOpenShareModal,
@@ -69,10 +67,6 @@ export const AppEditorView: React.FC<AppEditorViewProps> = ({
             >
               <i className={`fa-solid ${isGuest ? 'fa-home' : 'fa-arrow-left'}`}></i>
             </button>
-            <div className={`flex items-center gap-1.5 px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-tighter transition-colors ${isOnline ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400' : 'bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400'}`}>
-              <div className={`w-1.5 h-1.5 rounded-full ${isOnline ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'}`}></div>
-              {syncing ? 'Sincronizando...' : (isOnline ? 'Online' : 'Offline')}
-            </div>
           </div>
           <div className="flex gap-2">
             <button onClick={onOpenSettings} className="w-10 h-10 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-white flex items-center justify-center transition-transform active:scale-90 bg-slate-50 dark:bg-slate-800">

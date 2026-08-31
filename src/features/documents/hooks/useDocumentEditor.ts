@@ -96,7 +96,7 @@ export function useDocumentEditor({
       ...newDoc,
       id: crypto.randomUUID(),
       number: generateNextReceiptNumber(history, doc.type),
-      date: new Date().toISOString().split('T')[0],
+      date: new Date().toISOString().split('T')[0] ?? '',
     });
     setCurrentView('app');
     notify('Documento duplicado com novo número e data.', 'info');

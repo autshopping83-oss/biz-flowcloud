@@ -53,7 +53,6 @@ export interface ReceiptData {
   // Meta
   createdAt: number;
   pdfUrl?: string;
-  synced?: boolean;
 }
 
 export type SubscriptionPlan = 'FREE' | 'PRO' | 'ENTERPRISE';

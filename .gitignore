@@ -1,31 +1,12 @@
-keystore.jks
 node_modules
-
-# Capacitor / Android
-android/app/build/
-android/app/src/main/assets/public/
-android/capacitor-cordova-android-plugins/
-local.properties
-
-# Web Build
 dist/
-
-# Gradle
-.gradle/
-
-# IDEs and System
 .vscode/
 .idea/
 .DS_Store
 *.swp
-
-# Logs
 logs
 *.log
-
-# Environment variables
 .env
 .env.local
+.env.vercel
 .vercel
-
-/src/generated/prisma

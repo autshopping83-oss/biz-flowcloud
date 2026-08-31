@@ -6,14 +6,9 @@
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#2563EB",
-  "description": "Faturas, Recibos e Orçamentos em PDF. Gestão simples e profissional.",
-  "orientation": "portrait",
   "scope": "/",
   "categories": ["finance", "productivity", "business"],
   "icons": [
-    { "src": "/android-launchericon-192-192.png", "type": "image/png", "sizes": "192x192", "purpose": "any" },
-    { "src": "/android-launchericon-192-192.png", "type": "image/png", "sizes": "192x192", "purpose": "maskable" },
-    { "src": "/android-launchericon-512-512.png", "type": "image/png", "sizes": "512x512", "purpose": "any" },
-    { "src": "/android-launchericon-512-512.png", "type": "image/png", "sizes": "512x512", "purpose": "maskable" }
+    { "src": "/logo.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
   ]
 }

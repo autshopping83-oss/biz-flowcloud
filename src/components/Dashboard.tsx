@@ -16,18 +16,14 @@ interface DashboardProps {
   t: (key: string) => string;
   userId: string;
   onDeleteDocument?: (id: string) => void;
-  onInstallApp?: () => void;
-  showInstallButton?: boolean;
   onViewProducts?: () => void;
   onViewClients?: () => void;
-  onSync?: () => void;
-  syncing?: boolean;
 }
 
 type DashTab = 'OVERVIEW' | 'FINANCE';
 
 export const Dashboard: React.FC<DashboardProps> = ({
-  history, companySettings, onLogout, onNewDocument, onOpenSettings, onLoadDocument, onViewHistory, onToggleTheme, t, userId, onDeleteDocument, onInstallApp, showInstallButton, onViewProducts, onViewClients, onSync, syncing
+  history, companySettings, onLogout, onNewDocument, onOpenSettings, onLoadDocument, onViewHistory, onToggleTheme, t, userId, onDeleteDocument, onViewProducts, onViewClients
 }) => {
   
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -87,13 +83,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 </div>
             </div>
 
-            {/* Install Button Highlighted */}
-            {showInstallButton && onInstallApp && (
-                <button onClick={onInstallApp} className="w-full text-left px-5 py-4 mb-2 rounded-xl font-bold flex items-center gap-4 border transition-all bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/20">
-                     <i className="fa-solid fa-download w-5 text-center"></i> Instalar Aplicativo
-                </button>
-            )}
-            
             {/* Nav Items */}
             <button onClick={() => handleNav('OVERVIEW')} className={`w-full text-left px-5 py-3.5 rounded-xl font-bold flex items-center gap-4 border transition-all ${activeTab === 'OVERVIEW' ? 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white shadow-sm' : 'bg-transparent border-transparent text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
                  <i className={`fa-solid fa-house w-5 text-center ${activeTab === 'OVERVIEW' ? 'text-blue-600' : 'text-slate-400'}`}></i> {t('dashboard')}
@@ -116,14 +105,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </button>
             
             <div className="border-t border-slate-100 dark:border-slate-800 my-4 mx-2"></div>
-
-            {onSync && (
-              <button onClick={() => { setIsMenuOpen(false); onSync(); }} disabled={syncing}
-                className="w-full text-left px-5 py-3.5 rounded-xl font-medium flex items-center gap-4 border transition-all bg-blue-50 dark:bg-blue-900/20 border-blue-100 dark:border-blue-800 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/40 disabled:opacity-50">
-                <i className={`fa-solid ${syncing ? 'fa-spinner animate-spin' : 'fa-cloud-arrow-up'} text-blue-500 w-5 text-center`}></i>
-                {syncing ? 'A sincronizar...' : 'Sincronizar com a Nuvem'}
-              </button>
-            )}
 
             <button onClick={onToggleTheme} className="w-full text-left px-5 py-3.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white flex items-center gap-4 transition-colors">
                  <i className={`fa-solid ${companySettings.theme === 'dark' ? 'fa-sun' : 'fa-moon'} text-slate-400 w-5 text-center`}></i> {companySettings.theme === 'dark' ? 'Modo Claro' : 'Modo Escuro'}
