@@ -90,3 +90,13 @@ O projeto esta em producao na Vercel com Supabase. Qualquer alteracao deve consi
 - Row Level Security (RLS) no Supabase
 - Dados via Supabase (Web SaaS)
 - SPA routing (todas as rotas redirecionam para index.html)
+
+## 6. REGRA PERMANENTE — SUPABASE (PROIBIDO ALTERAR CONFIGURACAO)
+
+O Supabase do projeto contem **configuracoes nativas do biz-flow.cloud que NAO podem ser alteradas**.
+
+- **PROIBIDO**: apagar qualquer coisa no Supabase (tabelas, linhas, buckets, colunas, schema).
+- **PROIBIDO**: rodar Supabase CLI para migrations, alteracoes de schema, RLS, policies, triggers, funcoes ou qualquer mudanca de configuracao.
+- **PERMITIDO**: apenas leitura e escrita de dados normais da aplicacao (CRUD via cliente).
+- **OBRIGATORIO**: informar o utilizador de TODA e qualquer acao planejada sobre o Supabase (mesmo leitura/escrita de dados) antes de executar, e reportar depois.
+- Presumir que QUALQUER tabela/coluna/configuracao existente pode ter significado nativo do biz-flow.cloud e nao deve ser removida ou renomeada sem autorizacao explicita.
